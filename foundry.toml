@@ -9,5 +9,7 @@ remappings = [
     "forge-std/=lib/forge-std/src/",
     "openzeppelin-contracts/=lib/openzeppelin-contracts/",
 ]
+fs_permissions = [{ access = "read-write", path = "./deployments"}, { access = "read", path = "./"}]
+
 
 # See more config options https://github.com/foundry-rs/foundry/blob/master/crates/config/README.md#all-options
