@@ -63,7 +63,7 @@ contract EmptyContract {}
             proxyAdmin: proxyAdmin,
             fbtc1: FBTC1(address(newProxy(empty, proxyAdmin)))
         });
-        console.log("Implementations: ");
+        console.log("Implementations proxy: %s", address(ds.fbtc1));
 
         ds.fbtc1 = initFbtc1Token(
             proxyAdmin,
