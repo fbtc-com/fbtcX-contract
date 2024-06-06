@@ -24,8 +24,6 @@ contract FBTC1 is Initializable, ERC20Upgradeable, PausableUpgradeable, AccessCo
 
     IFireBridge public fbtcBridge;
     IERC20Upgradeable public fbtc;
-    mapping(address => uint256) public userBurnRequest;
-
 
     constructor() {
         _disableInitializers();
@@ -85,9 +83,7 @@ contract FBTC1 is Initializable, ERC20Upgradeable, PausableUpgradeable, AccessCo
 
         require(_amount > 0, "Amount must be greater than zero.");
 
-        userBurnRequest[msg.sender] += _amount;
         (_hash, _r) = IFireBridge(fbtcBridge).addMintRequest(_amount,_depositTxid,_outputIndex);
-
         emit RedeemFbtcRequest(msg.sender,_depositTxid,_outputIndex,_amount);
     }
 
@@ -96,12 +92,10 @@ contract FBTC1 is Initializable, ERC20Upgradeable, PausableUpgradeable, AccessCo
     ) public onlyRole(MINTER_ROLE) whenNotPaused {
 
         require(_amount > 0, "Amount must be greater than zero.");
-        require(userBurnRequest[msg.sender] > 0, "No burn request found for this user.");
-        require(fbtc.balanceOf(address(this)) >= userBurnRequest[msg.sender], "Insufficient FBTC balance in contract.");
-
-        SafeERC20Upgradeable.safeTransfer(fbtc, msg.sender , _amount);
+        require(fbtc.balanceOf(address(this)) >= _amount, "Insufficient FBTC balance in contract.");
+        
         _burn(msg.sender, _amount);
-        userBurnRequest[msg.sender] -= _amount;
+        SafeERC20Upgradeable.safeTransfer(fbtc, msg.sender , _amount);
 
         emit ConfirmRedeemFbtc(msg.sender,_amount);
     }
