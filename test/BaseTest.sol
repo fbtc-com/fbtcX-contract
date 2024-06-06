@@ -29,7 +29,6 @@ contract BaseTest is Test {
         operators[0] = address(this);
         proxyAdmin = new TimelockController({minDelay: 0, proposers: operators, executors: operators, admin: timeLockAdmin});
 
-        // `timestamps <= 1` have a special meaning in `TimelockController`, so we have to advance past those.
         vm.warp(2);
     }
 
@@ -88,11 +87,6 @@ contract MockFireBridge is Ownable {
     constructor(address _fbtc0Mock) {
         fbtc0Mock = Fbtc0Mock(_fbtc0Mock);
     }
-
-    // modifier onlyMinter() {
-    //     require(msg.sender == owner(), "Not authorized");
-    //     _;
-    // }
 
     function _generateHash() private view returns (bytes32) {
         return keccak256(abi.encodePacked(msg.sender));

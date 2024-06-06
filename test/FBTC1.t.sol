@@ -44,9 +44,10 @@ contract FBTC1VandalTest is FBTC1Test {
 
 
     function testMintFbtc1Request() public {
+
         vm.startPrank(minter);
         vm.deal(minter, 1 ether);
-        
+
         console.log("FBTC1 address: %s", address(fbtc1));
         fbtc0Mock.approve(address(fbtc1), 500 * 10 ** 8);
         fbtc1.mintFbtc1Request(500 * 10 ** 8);
@@ -123,7 +124,7 @@ contract FBTC1VandalTest is FBTC1Test {
 
     function testPause() public {
         vm.prank(minter);
-        vm.expectRevert();
+        vm.expectRevert(missingRoleError(minter,keccak256("PAUSER_ROLE")));
         fbtc1.pause();
 
         // Pause by authorized pauser should succeed
@@ -141,7 +142,7 @@ contract FBTC1VandalTest is FBTC1Test {
 
         // Attempt to unpause by non-authorized user should fail
         vm.prank(minter);
-        vm.expectRevert();
+        vm.expectRevert(missingRoleError(minter,keccak256("PAUSER_ROLE")));
         fbtc1.unpause();
 
         // Unpause by authorized pauser should succeed

@@ -66,6 +66,7 @@ contract FBTC1 is Initializable, ERC20Upgradeable, PausableUpgradeable, AccessCo
     function mintFbtc1Request(uint256 _amount) public onlyRole(MINTER_ROLE) whenNotPaused returns (uint256 realAmount) {
 
         require(_amount > 0, "Amount must be greater than zero.");
+        require(fbtc.balanceOf(msg.sender) >= _amount, "Insufficient FBTC balance.");
 
         SafeERC20Upgradeable.safeTransferFrom(fbtc, msg.sender, address(this), _amount);
         (bytes32 _hash, Request memory _r) = IFireBridge(fbtcBridge).addBurnRequest(_amount);

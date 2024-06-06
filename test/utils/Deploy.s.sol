@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: MIT
-pragma solidity ^0.8.18;
+pragma solidity ^0.8.20;
 
 import {
 ITransparentUpgradeableProxy, TransparentUpgradeableProxy
@@ -11,6 +11,7 @@ import {FBTC1} from "../../src/FBTC1.sol";
 import { initFbtc1Token } from "../../script/helpers/Proxy.sol";
 import {EmptyContract, deployAll, DeploymentParams, Deployments} from "../../script/helpers/Proxy.sol";
 
+    
     function newProxyWithAdmin(TimelockController admin) returns (ITransparentUpgradeableProxy) {
         EmptyContract empty = new EmptyContract();
         return ITransparentUpgradeableProxy(
