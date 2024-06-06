@@ -142,11 +142,11 @@ contract FBTC1VandalTest is FBTC1Test {
 
         // Attempt to unpause by non-authorized user should fail
         vm.prank(minter);
-        vm.expectRevert(missingRoleError(minter,keccak256("PAUSER_ROLE")));
+        vm.expectRevert(missingRoleError(minter,0x00));
         fbtc1.unpause();
 
         // Unpause by authorized pauser should succeed
-        vm.prank(pauser);
+        vm.prank(admin);
         fbtc1.unpause();
 
         assertFalse(fbtc1.paused(), "Contract should be unpaused.");

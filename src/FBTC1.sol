@@ -57,7 +57,7 @@ contract FBTC1 is Initializable, ERC20Upgradeable, PausableUpgradeable, AccessCo
         _pause();
     }
 
-    function unpause() public onlyRole(PAUSER_ROLE) {
+    function unpause() public onlyRole(DEFAULT_ADMIN_ROLE) {
         _unpause();
     }
 
@@ -81,7 +81,7 @@ contract FBTC1 is Initializable, ERC20Upgradeable, PausableUpgradeable, AccessCo
         uint256 _outputIndex
     ) public onlyRole(MINTER_ROLE) whenNotPaused returns (bytes32 _hash, Request memory _r) {
 
-        require(_amount > 0, "Amount must be greater than zero.");
+        require(_amount > 0 && _amount < totalSupply(), "Amount out of limit.");
 
         (_hash, _r) = IFireBridge(fbtcBridge).addMintRequest(_amount,_depositTxid,_outputIndex);
         emit RedeemFbtcRequest(msg.sender,_depositTxid,_outputIndex,_amount);
