@@ -5,9 +5,10 @@ import {FBTC1} from "../src/FBTC1.sol";
 import {BaseTest, Fbtc0Mock, MockFireBridge} from "./BaseTest.sol";
 import {newProxyWithAdmin, newFbtc1Token} from "./utils/Deploy.s.sol";
 import {
-ITransparentUpgradeableProxy, TransparentUpgradeableProxy
+    ITransparentUpgradeableProxy,
+    TransparentUpgradeableProxy
 } from "openzeppelin-contracts/contracts/proxy/transparent/TransparentUpgradeableProxy.sol";
-import { Request }  from "../src/Common.sol";
+import {Request} from "../src/Common.sol";
 import {console2 as console} from "forge-std/console2.sol";
 
 contract FBTC1Test is BaseTest {
@@ -16,7 +17,6 @@ contract FBTC1Test is BaseTest {
     MockFireBridge public mockBridge;
 
     function setUp() public {
-
         fbtc0Mock = new Fbtc0Mock();
         mockBridge = new MockFireBridge(address(fbtc0Mock));
         fbtc1 = FBTC1(address(newProxyWithAdmin(proxyAdmin)));
@@ -35,16 +35,11 @@ contract FBTC1Test is BaseTest {
         // Mint some mock tokens to user
         fbtc0Mock.mint(user, 1000 * 10 ** 8);
         fbtc0Mock.mint(minter, 500 * 10 ** 8);
-
     }
-
 }
 
 contract FBTC1VandalTest is FBTC1Test {
-
-
     function testMintFbtc1Request() public {
-
         vm.startPrank(minter);
         vm.deal(minter, 1 ether);
 
@@ -52,7 +47,7 @@ contract FBTC1VandalTest is FBTC1Test {
         fbtc0Mock.approve(address(fbtc1), 500 * 10 ** 8);
         fbtc1.mintFbtc1Request(500 * 10 ** 8);
 
-        bytes32 requestHash = keccak256(abi.encodePacked(fbtc1)); 
+        bytes32 requestHash = keccak256(abi.encodePacked(fbtc1));
         Request memory lastRequest = mockBridge.getRequest(requestHash);
 
         uint256 expectedBalance = 500 * 10 ** 8 - lastRequest.fee;
@@ -63,20 +58,19 @@ contract FBTC1VandalTest is FBTC1Test {
         vm.stopPrank();
     }
 
-
     function testRedeemFbtcRequest() public {
         vm.startPrank(minter);
 
         fbtc0Mock.approve(address(fbtc1), 500 * 10 ** 8);
         fbtc1.mintFbtc1Request(500 * 10 ** 8);
 
-        (bytes32 mintRequestHash, Request memory request) = mockBridge.addMintRequest(300 * 10 ** 8, bytes32("0xabc"), 1);
+        (bytes32 mintRequestHash, Request memory request) =
+            mockBridge.addMintRequest(300 * 10 ** 8, bytes32("0xabc"), 1);
 
         fbtc1.redeemFbtcRequest(300 * 10 ** 8, bytes32("0xabc"), 1);
 
         assertTrue(mintRequestHash != bytes32(0), "Mint request hash should not be zero");
         assertTrue(request.amount == 300 * 10 ** 8, "Mint request amount mismatch");
-
     }
 
     function testConfirmRedeemFbtc() public {
@@ -95,8 +89,7 @@ contract FBTC1VandalTest is FBTC1Test {
         assertEq(fbtc0Balance, 300 * 10 ** 8, "Redeemed FBTC0 balance mismatch");
     }
 
-     function testEmergencyBurn() public {
-
+    function testEmergencyBurn() public {
         vm.startPrank(minter);
         vm.deal(minter, 1 ether);
         fbtc0Mock.approve(address(fbtc1), 500 * 10 ** 8);
@@ -110,7 +103,7 @@ contract FBTC1VandalTest is FBTC1Test {
 
     function testTransfer() public {
         vm.startPrank(user);
-        
+
         vm.expectRevert("FBTC1: transfers are disabled");
         fbtc1.transfer(address(0x6), 100 * 10 ** 8);
     }
@@ -124,7 +117,7 @@ contract FBTC1VandalTest is FBTC1Test {
 
     function testPause() public {
         vm.prank(minter);
-        vm.expectRevert(missingRoleError(minter,keccak256("PAUSER_ROLE")));
+        vm.expectRevert(missingRoleError(minter, keccak256("PAUSER_ROLE")));
         fbtc1.pause();
 
         // Pause by authorized pauser should succeed
@@ -135,14 +128,13 @@ contract FBTC1VandalTest is FBTC1Test {
     }
 
     function testUnpause() public {
-
         vm.prank(pauser);
         fbtc1.pause();
         assertTrue(fbtc1.paused(), "Contract should be paused.");
 
         // Attempt to unpause by non-authorized user should fail
         vm.prank(minter);
-        vm.expectRevert(missingRoleError(minter,0x00));
+        vm.expectRevert(missingRoleError(minter, 0x00));
         fbtc1.unpause();
 
         // Unpause by authorized pauser should succeed
@@ -151,7 +143,4 @@ contract FBTC1VandalTest is FBTC1Test {
 
         assertFalse(fbtc1.paused(), "Contract should be unpaused.");
     }
-
 }
-
-

@@ -5,7 +5,6 @@ import {Script} from "forge-std/Script.sol";
 import {Deployments} from "./helpers/Proxy.sol";
 
 contract Base is Script {
-
     function setUp() public virtual {
         require(vm.envUint("CHAIN_ID") == block.chainid, "wrong chain id");
     }
