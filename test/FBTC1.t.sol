@@ -1,9 +1,9 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.20;
 
-import {FBTC1} from "../src/FBTC1.sol";
+import {LockedFBTC} from "../src/LockedFBTC.sol";
 import {BaseTest, Fbtc0Mock, MockFireBridge} from "./BaseTest.sol";
-import {newProxyWithAdmin, newFbtc1Token} from "./utils/Deploy.s.sol";
+import {newProxyWithAdmin, newLockedFBTC} from "./utils/Deploy.s.sol";
 import {
     ITransparentUpgradeableProxy,
     TransparentUpgradeableProxy
@@ -11,19 +11,19 @@ import {
 import {Request} from "../src/Common.sol";
 import {console2 as console} from "forge-std/console2.sol";
 
-contract FBTC1Test is BaseTest {
-    FBTC1 public fbtc1;
+contract LockedFBTCTest is BaseTest {
+    LockedFBTC public lockedFBTC;
     Fbtc0Mock public fbtc0Mock;
     MockFireBridge public mockBridge;
 
     function setUp() public {
         fbtc0Mock = new Fbtc0Mock();
         mockBridge = new MockFireBridge(address(fbtc0Mock));
-        fbtc1 = FBTC1(address(newProxyWithAdmin(proxyAdmin)));
+        lockedFBTC = LockedFBTC(address(newProxyWithAdmin(proxyAdmin)));
 
-        fbtc1 = newFbtc1Token(
+        lockedFBTC = newLockedFBTC(
             proxyAdmin,
-            ITransparentUpgradeableProxy(address(fbtc1)),
+            ITransparentUpgradeableProxy(address(lockedFBTC)),
             address(fbtc0Mock),
             address(mockBridge),
             admin,
@@ -38,22 +38,22 @@ contract FBTC1Test is BaseTest {
     }
 }
 
-contract FBTC1VandalTest is FBTC1Test {
-    function testMintFbtc1Request() public {
+contract LockedFBTCVandalTest is LockedFBTCTest {
+    function testMintLockedFBTCRequest() public {
         vm.startPrank(minter);
         vm.deal(minter, 1 ether);
 
-        console.log("FBTC1 address: %s", address(fbtc1));
-        fbtc0Mock.approve(address(fbtc1), 500 * 10 ** 8);
-        fbtc1.mintFbtc1Request(500 * 10 ** 8);
+        console.log("LockedFBTC address: %s", address(lockedFBTC));
+        fbtc0Mock.approve(address(lockedFBTC), 500 * 10 ** 8);
+        lockedFBTC.mintLockedFbtcRequest(500 * 10 ** 8);
 
-        bytes32 requestHash = keccak256(abi.encodePacked(fbtc1));
+        bytes32 requestHash = keccak256(abi.encodePacked(lockedFBTC));
         Request memory lastRequest = mockBridge.getRequest(requestHash);
 
         uint256 expectedBalance = 500 * 10 ** 8 - lastRequest.fee;
-        uint256 fbtc1Balance = fbtc1.balanceOf(minter);
+        uint256 lockedFBTCBalance = lockedFBTC.balanceOf(minter);
 
-        assertEq(fbtc1Balance, expectedBalance, "Minted FBTC1 balance mismatch");
+        assertEq(lockedFBTCBalance, expectedBalance, "Minted LockedFBTC balance mismatch");
 
         vm.stopPrank();
     }
@@ -61,13 +61,13 @@ contract FBTC1VandalTest is FBTC1Test {
     function testRedeemFbtcRequest() public {
         vm.startPrank(minter);
 
-        fbtc0Mock.approve(address(fbtc1), 500 * 10 ** 8);
-        fbtc1.mintFbtc1Request(500 * 10 ** 8);
+        fbtc0Mock.approve(address(lockedFBTC), 500 * 10 ** 8);
+        lockedFBTC.mintLockedFbtcRequest(500 * 10 ** 8);
 
         (bytes32 mintRequestHash, Request memory request) =
             mockBridge.addMintRequest(300 * 10 ** 8, bytes32("0xabc"), 1);
 
-        fbtc1.redeemFbtcRequest(300 * 10 ** 8, bytes32("0xabc"), 1);
+        lockedFBTC.redeemFbtcRequest(300 * 10 ** 8, bytes32("0xabc"), 1);
 
         assertTrue(mintRequestHash != bytes32(0), "Mint request hash should not be zero");
         assertTrue(request.amount == 300 * 10 ** 8, "Mint request amount mismatch");
@@ -76,14 +76,14 @@ contract FBTC1VandalTest is FBTC1Test {
     function testConfirmRedeemFbtc() public {
         vm.startPrank(minter);
 
-        fbtc0Mock.approve(address(fbtc1), 500 * 10 ** 8);
-        fbtc1.mintFbtc1Request(500 * 10 ** 8);
+        fbtc0Mock.approve(address(lockedFBTC), 500 * 10 ** 8);
+        lockedFBTC.mintLockedFbtcRequest(500 * 10 ** 8);
 
-        (bytes32 mintRequestHash, Request memory request) = fbtc1.redeemFbtcRequest(300 * 10 ** 8, bytes32("0xabc"), 1);
+        (bytes32 mintRequestHash, Request memory request) = lockedFBTC.redeemFbtcRequest(300 * 10 ** 8, bytes32("0xabc"), 1);
 
         mockBridge.confirmMintRequest(mintRequestHash);
 
-        fbtc1.confirmRedeemFbtc(300 * 10 ** 8);
+        lockedFBTC.confirmRedeemFbtc(300 * 10 ** 8);
 
         uint256 fbtc0Balance = fbtc0Mock.balanceOf(minter);
         assertEq(fbtc0Balance, 300 * 10 ** 8, "Redeemed FBTC0 balance mismatch");
@@ -92,55 +92,55 @@ contract FBTC1VandalTest is FBTC1Test {
     function testEmergencyBurn() public {
         vm.startPrank(minter);
         vm.deal(minter, 1 ether);
-        fbtc0Mock.approve(address(fbtc1), 500 * 10 ** 8);
-        uint256 realAmount = fbtc1.mintFbtc1Request(500 * 10 ** 8);
+        fbtc0Mock.approve(address(lockedFBTC), 500 * 10 ** 8);
+        uint256 realAmount = lockedFBTC.mintLockedFbtcRequest(500 * 10 ** 8);
         vm.startPrank(safetyCommittee);
-        fbtc1.emergencyBurn(minter, 200 * 10 ** 8);
+        lockedFBTC.emergencyBurn(minter, 200 * 10 ** 8);
 
-        uint256 fbtc1Balance = fbtc1.balanceOf(minter);
-        assertEq(fbtc1Balance, realAmount - 200 * 10 ** 8, "Emergency burn balance mismatch");
+        uint256 lockedFBTCBalance = lockedFBTC.balanceOf(minter);
+        assertEq(lockedFBTCBalance, realAmount - 200 * 10 ** 8, "Emergency burn balance mismatch");
     }
 
     function testTransfer() public {
         vm.startPrank(user);
 
-        vm.expectRevert("FBTC1: transfers are disabled");
-        fbtc1.transfer(address(0x6), 100 * 10 ** 8);
+        vm.expectRevert("lockedFBTC: transfers are disabled");
+        lockedFBTC.transfer(address(0x6), 100 * 10 ** 8);
     }
 
     function testTransferFrom() public {
         vm.startPrank(user);
 
-        vm.expectRevert("FBTC1: transfers are disabled");
-        fbtc1.transferFrom(user, address(0x6), 100 * 10 ** 8);
+        vm.expectRevert("lockedFBTC: transfers are disabled");
+        lockedFBTC.transferFrom(user, address(0x6), 100 * 10 ** 8);
     }
 
     function testPause() public {
         vm.prank(minter);
         vm.expectRevert(missingRoleError(minter, keccak256("PAUSER_ROLE")));
-        fbtc1.pause();
+        lockedFBTC.pause();
 
         // Pause by authorized pauser should succeed
         vm.prank(pauser);
-        fbtc1.pause();
+        lockedFBTC.pause();
 
-        assertTrue(fbtc1.paused(), "Contract should be paused.");
+        assertTrue(lockedFBTC.paused(), "Contract should be paused.");
     }
 
     function testUnpause() public {
         vm.prank(pauser);
-        fbtc1.pause();
-        assertTrue(fbtc1.paused(), "Contract should be paused.");
+        lockedFBTC.pause();
+        assertTrue(lockedFBTC.paused(), "Contract should be paused.");
 
         // Attempt to unpause by non-authorized user should fail
         vm.prank(minter);
         vm.expectRevert(missingRoleError(minter, 0x00));
-        fbtc1.unpause();
+        lockedFBTC.unpause();
 
         // Unpause by authorized pauser should succeed
         vm.prank(admin);
-        fbtc1.unpause();
+        lockedFBTC.unpause();
 
-        assertFalse(fbtc1.paused(), "Contract should be unpaused.");
+        assertFalse(lockedFBTC.paused(), "Contract should be unpaused.");
     }
 }

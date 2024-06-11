@@ -11,8 +11,8 @@ import "@openzeppelin/contracts-upgradeable/proxy/utils/Initializable.sol";
 import {IFireBridge} from "./Interfaces/IFireBridge.sol";
 import {Request, UserInfo, RequestLib, Operation} from "./Common.sol";
 
-contract FBTC1 is Initializable, ERC20Upgradeable, PausableUpgradeable, AccessControlUpgradeable {
-    event MintFbtc1Request(address indexed minter, uint256 receivedAmount, uint256 fee);
+contract LockedFBTC is Initializable, ERC20Upgradeable, PausableUpgradeable, AccessControlUpgradeable {
+    event MintLockedFbtcRequest(address indexed minter, uint256 receivedAmount, uint256 fee);
     event RedeemFbtcRequest(address indexed owner, bytes32 depositTx, uint256 outputIndex, uint256 amount);
     event ConfirmRedeemFbtc(address indexed owner, uint256 amount);
     event EmergencyBurn(address indexed operator, address indexed from, uint256 amount);
@@ -36,7 +36,7 @@ contract FBTC1 is Initializable, ERC20Upgradeable, PausableUpgradeable, AccessCo
         address minter,
         address safetyCommittee
     ) public initializer {
-        __ERC20_init("FBTC1 Token", "FBTC1");
+        __ERC20_init("lockedFBTC", "lockedFBTC");
         __Pausable_init();
 
         _grantRole(DEFAULT_ADMIN_ROLE, admin);
@@ -60,7 +60,7 @@ contract FBTC1 is Initializable, ERC20Upgradeable, PausableUpgradeable, AccessCo
         _unpause();
     }
 
-    function mintFbtc1Request(uint256 _amount)
+    function mintLockedFbtcRequest(uint256 _amount)
         public
         onlyRole(MINTER_ROLE)
         whenNotPaused
@@ -75,7 +75,7 @@ contract FBTC1 is Initializable, ERC20Upgradeable, PausableUpgradeable, AccessCo
         realAmount = _amount - _r.fee;
         _mint(msg.sender, realAmount);
 
-        emit MintFbtc1Request(msg.sender, realAmount, _r.fee);
+        emit MintLockedFbtcRequest(msg.sender, realAmount, _r.fee);
     }
 
     function redeemFbtcRequest(uint256 _amount, bytes32 _depositTxid, uint256 _outputIndex)
@@ -84,7 +84,7 @@ contract FBTC1 is Initializable, ERC20Upgradeable, PausableUpgradeable, AccessCo
         whenNotPaused
         returns (bytes32 _hash, Request memory _r)
     {
-        require(_amount > 0 && _amount < totalSupply(), "Amount out of limit.");
+        require(_amount > 0 && _amount <= totalSupply(), "Amount out of limit.");
 
         (_hash, _r) = IFireBridge(fbtcBridge).addMintRequest(_amount, _depositTxid, _outputIndex);
         emit RedeemFbtcRequest(msg.sender, _depositTxid, _outputIndex, _amount);
@@ -106,10 +106,10 @@ contract FBTC1 is Initializable, ERC20Upgradeable, PausableUpgradeable, AccessCo
     }
 
     function transfer(address to, uint256 amount) public override returns (bool) {
-        revert("FBTC1: transfers are disabled");
+        revert("lockedFBTC: transfers are disabled");
     }
 
     function transferFrom(address from, address to, uint256 amount) public override returns (bool) {
-        revert("FBTC1: transfers are disabled");
+        revert("lockedFBTC: transfers are disabled");
     }
 }

@@ -34,7 +34,7 @@ contract Deploy is Base {
 
     function logDeployments(Deployments memory deps) public view {
         console.log("Deployments:");
-        console.log("FBTC1 address: %s", address(deps.fbtc1));
+        console.log("lockedFBTC address: %s", address(deps.lockedFBTC));
     }
 
     function transferAllRoles() public {

@@ -8,7 +8,7 @@ import {
 import {AccessControlUpgradeable} from
     "openzeppelin-contracts-upgradeable/contracts/access/AccessControlUpgradeable.sol";
 import {TimelockController} from "openzeppelin-contracts/contracts/governance/TimelockController.sol";
-import {FBTC1} from "../../src/FBTC1.sol";
+import {LockedFBTC} from "../../src/LockedFBTC.sol";
 import {console2 as console} from "forge-std/console2.sol";
 
 // EmptyContract serves as a dud implementation for the proxy, which lets us point
@@ -18,7 +18,7 @@ contract EmptyContract {}
 
 struct Deployments {
     TimelockController proxyAdmin;
-    FBTC1 fbtc1;
+    LockedFBTC lockedFBTC;
 }
 
 struct DeploymentParams {
@@ -55,12 +55,12 @@ function deployAll(DeploymentParams memory params, address deployer) returns (De
     // Create empty contract for proxy pointer
     EmptyContract empty = new EmptyContract();
     // Create proxies for all contracts
-    Deployments memory ds = Deployments({proxyAdmin: proxyAdmin, fbtc1: FBTC1(address(newProxy(empty, proxyAdmin)))});
-    console.log("Implementations proxy: %s", address(ds.fbtc1));
+    Deployments memory ds = Deployments({proxyAdmin: proxyAdmin, lockedFBTC: LockedFBTC(address(newProxy(empty, proxyAdmin)))});
+    console.log("Implementations proxy: %s", address(ds.lockedFBTC));
 
-    ds.fbtc1 = initFbtc1Token(
+    ds.lockedFBTC = initLockedFBTC(
         proxyAdmin,
-        ITransparentUpgradeableProxy(address(ds.fbtc1)),
+        ITransparentUpgradeableProxy(address(ds.lockedFBTC)),
         params.fbtcAddress,
         params.fireBrdigeAddress,
         params.admin,
@@ -117,7 +117,7 @@ function upgradeToAndCall(
     upgradeToAndCall(controller, proxy, implementation, 0, data);
 }
 
-function initFbtc1Token(
+function initLockedFBTC(
     TimelockController proxyAdmin,
     ITransparentUpgradeableProxy proxy,
     address fbtcAddress,
@@ -126,16 +126,16 @@ function initFbtc1Token(
     address pauser,
     address minter,
     address safetyCommittee
-) returns (FBTC1) {
-    FBTC1 impl = new FBTC1();
-    console.log("FBTC1 Impl: ", address(impl));
+) returns (LockedFBTC) {
+    LockedFBTC impl = new LockedFBTC();
+    console.log("LockedFBTC Impl: ", address(impl));
     upgradeToAndCall(
         proxyAdmin,
         proxy,
         address(impl),
-        abi.encodeCall(FBTC1.initialize, (fbtcAddress, fireBrdigeAddress, admin, pauser, minter, safetyCommittee))
+        abi.encodeCall(LockedFBTC.initialize, (fbtcAddress, fireBrdigeAddress, admin, pauser, minter, safetyCommittee))
     );
-    return FBTC1(address(proxy));
+    return LockedFBTC(address(proxy));
 }
 
 function grantRole(AccessControlUpgradeable controllable, bytes32 role, address newAccount) {
@@ -154,7 +154,7 @@ function grantAndRenounce(AccessControlUpgradeable controllable, bytes32 role, a
 /// @dev Assumes that all contracts were deployed using `sender` as admin/manager/etc.
 function grantAndRenounceAllRoles(DeploymentParams memory params, Deployments memory ds, address sender) {
     //
-    grantAndRenounce(ds.fbtc1, ds.fbtc1.DEFAULT_ADMIN_ROLE(), sender, params.admin);
+    grantAndRenounce(ds.lockedFBTC, ds.lockedFBTC.DEFAULT_ADMIN_ROLE(), sender, params.admin);
 }
 
 function grantAllAdminRoles(Deployments memory ds, address newAdmin) {

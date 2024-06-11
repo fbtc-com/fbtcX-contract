@@ -22,7 +22,7 @@ contract Base is Script {
         bytes memory data = vm.readFileBinary(_deploymentsFile());
         Deployments memory depls = abi.decode(data, (Deployments));
 
-        require(address(depls.fbtc1).code.length > 0, "contracts are not deployed yet");
+        require(address(depls.lockedFBTC).code.length > 0, "contracts are not deployed yet");
         return depls;
     }
 }
