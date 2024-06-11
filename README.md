@@ -1,23 +1,13 @@
-## Foundry
+## FbtcX-contracts
 
-**Foundry is a blazing fast, portable and modular toolkit for Ethereum application development written in Rust.**
-
-Foundry consists of:
-
--   **Forge**: Ethereum testing framework (like Truffle, Hardhat and DappTools).
--   **Cast**: Swiss army knife for interacting with EVM smart contracts, sending transactions and getting chain data.
--   **Anvil**: Local Ethereum node, akin to Ganache, Hardhat Network.
--   **Chisel**: Fast, utilitarian, and verbose solidity REPL.
-
-## Documentation
-
-https://book.getfoundry.sh/
-
-## Usage
+The locked FBTC has been locked within partner applications, backed by native BTC held in a separate BTC address. Locked FBTC is created for dedicated partner protocols.
 
 ### Build
 
 ```shell
+$ forge install OpenZeppelin/openzeppelin-contracts@v4.9.6 --no-commit
+$ forge install OpenZeppelin/openzeppelin-contracts-upgradeable@v4.9.6 --no-commit
+
 $ forge build
 ```
 
@@ -27,34 +17,17 @@ $ forge build
 $ forge test
 ```
 
-### Format
-
-```shell
-$ forge fmt
-```
-
-### Gas Snapshots
-
-```shell
-$ forge snapshot
-```
-
-### Anvil
-
-```shell
-$ anvil
-```
-
 ### Deploy
 
 ```shell
-$ forge script script/Counter.s.sol:CounterScript --rpc-url <your_rpc_url> --private-key <your_private_key>
-```
-
-### Cast
-
-```shell
-$ cast <subcommand>
+forge script script/deploy.s.sol:Deploy \
+    -s "deploy()" \
+    -vvvvv \
+    --priority-gas-price 0 \
+    --rpc-url $FOUNDRY_RPC_URL \
+    --private-key $PRIVATE_KEY \
+    -g 700000 \
+    --broadcast
 ```
 
 ### Help

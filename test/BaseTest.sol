@@ -8,17 +8,16 @@ import {Ownable} from "openzeppelin-contracts/contracts/access/Ownable.sol";
 import {ERC20} from "openzeppelin-contracts/contracts/token/ERC20/ERC20.sol";
 import {IAccessControl} from "openzeppelin-contracts/contracts/access/IAccessControl.sol";
 import {TimelockController} from "openzeppelin-contracts/contracts/governance/TimelockController.sol";
-import { Request,Operation, Status }  from "../src/Common.sol";
+import {Request, Operation, Status} from "../src/Common.sol";
 
 contract BaseTest is Test {
-
     address public immutable timeLockAdmin = makeAddr("admin");
     address public immutable upgrader = makeAddr("upgrader");
 
-    address public immutable  admin = makeAddr("admin");
-    address public immutable  pauser = makeAddr("pauser");
-    address public immutable  minter = makeAddr("minter");
-    address public immutable  safetyCommittee = makeAddr("safetyCommittee");
+    address public immutable admin = makeAddr("admin");
+    address public immutable pauser = makeAddr("pauser");
+    address public immutable minter = makeAddr("minter");
+    address public immutable safetyCommittee = makeAddr("safetyCommittee");
 
     address public immutable user = makeAddr("user");
 
@@ -27,7 +26,8 @@ contract BaseTest is Test {
     constructor() {
         address[] memory operators = new address[](1);
         operators[0] = address(this);
-        proxyAdmin = new TimelockController({minDelay: 0, proposers: operators, executors: operators, admin: timeLockAdmin});
+        proxyAdmin =
+            new TimelockController({minDelay: 0, proposers: operators, executors: operators, admin: timeLockAdmin});
 
         vm.warp(2);
     }
@@ -35,7 +35,6 @@ contract BaseTest is Test {
     function deploymentParams() internal view returns (DeploymentParams memory) {
         // BTCBridge setup
         return DeploymentParams({
-
             fbtcAddress: vm.envAddress("FBTC_ADDRESS"),
             fireBrdigeAddress: vm.envAddress("FIRE_BRIDGE_ADDRESS"),
             timeLockAdmin: vm.envAddress("TIMELOCK_ADMIN_ADDRESS"),
@@ -44,7 +43,6 @@ contract BaseTest is Test {
             pauser: vm.envAddress("PAUSER_ROLE_ADDRESS"),
             minter: vm.envAddress("MINTER_ROLE_ADDRESS"),
             safetyCommittee: vm.envAddress("SAFETY_COMMITTEE")
-
         });
     }
 
@@ -62,7 +60,6 @@ contract BaseTest is Test {
         vm.expectRevert(missingRoleError(vandal, role));
         vm.prank(vandal);
     }
-
 }
 
 // Mock FBTC0 token
@@ -97,11 +94,10 @@ contract MockFireBridge is Ownable {
         return requests[_hash];
     }
 
-    function addMintRequest(
-        uint256 _amount,
-        bytes32 _depositTxid,
-        uint256 _outputIndex
-    ) external returns (bytes32 _hash, Request memory _r) {
+    function addMintRequest(uint256 _amount, bytes32 _depositTxid, uint256 _outputIndex)
+        external
+        returns (bytes32 _hash, Request memory _r)
+    {
         _hash = _generateHash();
         nonceCounter++;
 
@@ -114,16 +110,14 @@ contract MockFireBridge is Ownable {
             dstChain: bytes32("destinationChain"),
             dstAddress: abi.encode(msg.sender),
             amount: _amount,
-            fee: 0, 
+            fee: 0,
             extra: abi.encode(_depositTxid, _outputIndex)
         });
 
         requests[_hash] = _r;
     }
 
-    function addBurnRequest(
-        uint256 _amount
-    ) external returns (bytes32 _hash, Request memory _r) {
+    function addBurnRequest(uint256 _amount) external returns (bytes32 _hash, Request memory _r) {
         _hash = _generateHash();
         nonceCounter++;
 
@@ -136,7 +130,7 @@ contract MockFireBridge is Ownable {
             dstChain: bytes32("destinationChain"),
             dstAddress: abi.encode(msg.sender),
             amount: _amount,
-            fee: 10000, 
+            fee: 10000,
             extra: ""
         });
 
@@ -146,9 +140,7 @@ contract MockFireBridge is Ownable {
         fbtc0Mock.burn(msg.sender, _amount);
     }
 
-    function confirmMintRequest(
-        bytes32 _hash
-    ) external {
+    function confirmMintRequest(bytes32 _hash) external {
         Request storage _r = requests[_hash];
         require(_r.status == Status.Pending, "Request not pending");
 

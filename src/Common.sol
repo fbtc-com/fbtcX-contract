@@ -37,22 +37,17 @@ struct UserInfo {
 
 library ChainCode {
     // For EVM chains, the chain code is chain id in bytes32 format.
-    bytes32 constant ETH =
-        0x0000000000000000000000000000000000000000000000000000000000000001;
+    bytes32 constant ETH = 0x0000000000000000000000000000000000000000000000000000000000000001;
 
-    bytes32 constant MANTLE =
-        0x0000000000000000000000000000000000000000000000000000000000001388;
+    bytes32 constant MANTLE = 0x0000000000000000000000000000000000000000000000000000000000001388;
 
     // Other chains.
-    bytes32 constant BTC =
-        0x0100000000000000000000000000000000000000000000000000000000000000;
+    bytes32 constant BTC = 0x0100000000000000000000000000000000000000000000000000000000000000;
 
-    bytes32 constant SOLANA =
-        0x0200000000000000000000000000000000000000000000000000000000000000;
+    bytes32 constant SOLANA = 0x0200000000000000000000000000000000000000000000000000000000000000;
 
     // For test.
-    bytes32 constant XTN =
-        0x0110000000000000000000000000000000000000000000000000000000000000;
+    bytes32 constant XTN = 0x0110000000000000000000000000000000000000000000000000000000000000;
 
     function getSelfChainCode() internal view returns (bytes32) {
         return bytes32(block.chainid);
@@ -70,9 +65,7 @@ library RequestLib {
     ///       The `nonce` differs
     ///   On different chains:
     ///       The `chain.id` differs or the `op` differs
-    function getRequestHash(
-        Request memory r
-    ) internal pure returns (bytes32 _hash) {
+    function getRequestHash(Request memory r) internal pure returns (bytes32 _hash) {
         _hash = keccak256(
             abi.encode(
                 r.op,
@@ -88,9 +81,7 @@ library RequestLib {
         );
     }
 
-    function getCrossSourceRequestHash(
-        Request memory src
-    ) internal pure returns (bytes32 _hash) {
+    function getCrossSourceRequestHash(Request memory src) internal pure returns (bytes32 _hash) {
         // Save.
         bytes memory extra = src.extra;
         // Set temperary data to calculate hash.
