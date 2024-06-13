@@ -89,6 +89,23 @@ contract LockedFBTCVandalTest is LockedFBTCTest {
         assertEq(fbtc0Balance, 300 * 10 ** 8, "Redeemed FBTC0 balance mismatch");
     }
 
+    function testBurn() public {
+        vm.startPrank(minter);
+        vm.deal(minter, 1 ether);
+        fbtc0Mock.approve(address(lockedFBTC), 500 * 10 ** 8);
+        uint256 realAmount = lockedFBTC.mintLockedFbtcRequest(500 * 10 ** 8);
+
+        bytes32 requestHash = keccak256(abi.encodePacked(lockedFBTC));
+        Request memory lastRequest = mockBridge.getRequest(requestHash);
+
+        uint256 expectedBalance = 500 * 10 ** 8 - lastRequest.fee;
+        vm.startPrank(minter);
+        lockedFBTC.burn(expectedBalance);
+
+        uint256 lockedFBTCBalance = lockedFBTC.balanceOf(minter);
+        assertEq(lockedFBTCBalance, realAmount - expectedBalance, "Burn balance mismatch");
+    }
+
     function testEmergencyBurn() public {
         vm.startPrank(minter);
         vm.deal(minter, 1 ether);

@@ -100,6 +100,10 @@ contract LockedFBTC is Initializable, ERC20Upgradeable, PausableUpgradeable, Acc
         emit ConfirmRedeemFbtc(msg.sender, _amount);
     }
 
+    function burn(uint256 _amount) public onlyRole(MINTER_ROLE) whenNotPaused {
+        _burn(msg.sender, _amount);
+    }
+
     function emergencyBurn(address _from, uint256 _amount) public onlyRole(SAFETY_COMMITTEE_ROLE) {
         _burn(_from, _amount);
         emit EmergencyBurn(msg.sender, _from, _amount);
