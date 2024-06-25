@@ -66,7 +66,9 @@ function deployAll(DeploymentParams memory params, address deployer) returns (De
         params.admin,
         params.pauser,
         params.minter,
-        params.safetyCommittee
+        params.safetyCommittee,
+        "lockedFBTC",
+        "lockedFBTC"
     );
 
     if (deployer != params.upgrader) {
@@ -125,7 +127,9 @@ function initLockedFBTC(
     address admin,
     address pauser,
     address minter,
-    address safetyCommittee
+    address safetyCommittee,
+    string memory name,
+    string memory symbol
 ) returns (LockedFBTC) {
     LockedFBTC impl = new LockedFBTC();
     console.log("LockedFBTC Impl: ", address(impl));
@@ -133,7 +137,7 @@ function initLockedFBTC(
         proxyAdmin,
         proxy,
         address(impl),
-        abi.encodeCall(LockedFBTC.initialize, (fbtcAddress, fireBrdigeAddress, admin, pauser, minter, safetyCommittee))
+        abi.encodeCall(LockedFBTC.initialize, (fbtcAddress, fireBrdigeAddress, admin, pauser, minter, safetyCommittee, name, symbol))
     );
     return LockedFBTC(address(proxy));
 }

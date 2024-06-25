@@ -25,9 +25,11 @@ function newLockedFBTC(
     address admin,
     address pauser,
     address minter,
-    address safetyCommittee
+    address safetyCommittee,
+    string memory name,
+    string memory symbol
 ) returns (LockedFBTC) {
-    return initLockedFBTC(proxyAdmin, proxy, fbtcAddress, fireBrdigeAddress, admin, pauser, minter, safetyCommittee);
+    return initLockedFBTC(proxyAdmin, proxy, fbtcAddress, fireBrdigeAddress, admin, pauser, minter, safetyCommittee, name, symbol);
 }
 
 function testDeployAll(DeploymentParams memory params, address deployer) returns (Deployments memory) {

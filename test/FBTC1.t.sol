@@ -29,7 +29,9 @@ contract LockedFBTCTest is BaseTest {
             admin,
             pauser,
             minter,
-            safetyCommittee
+            safetyCommittee,
+            "testToken",
+            "TT"
         );
 
         // Mint some mock tokens to user
