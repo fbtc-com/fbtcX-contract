@@ -9,7 +9,7 @@ import "@openzeppelin/contracts-upgradeable/access/AccessControlUpgradeable.sol"
 import "@openzeppelin/contracts-upgradeable/proxy/utils/Initializable.sol";
 
 import {IFireBridge} from "./Interfaces/IFireBridge.sol";
-import {Request, UserInfo, RequestLib, Operation} from "./Common.sol";
+import {Request} from "./Common.sol";
 
 contract LockedFBTC is Initializable, ERC20Upgradeable, PausableUpgradeable, AccessControlUpgradeable {
     event MintLockedFbtcRequest(address indexed minter, uint256 receivedAmount, uint256 fee);
@@ -34,11 +34,17 @@ contract LockedFBTC is Initializable, ERC20Upgradeable, PausableUpgradeable, Acc
         address admin,
         address pauser,
         address minter,
-        address safetyCommittee
+        address safetyCommittee,
+        string memory name,
+        string memory symbol
     ) public initializer {
-        __ERC20_init("lockedFBTC", "lockedFBTC");
-        __Pausable_init();
 
+        require(admin != address(0), "Admin cannot be zero Address");
+        require(_fbtcAddress != address(0), "Admin cannot be zero Address");
+        require(_fbtcBridgeAddress != address(0), "Admin cannot be zero Address");
+        
+        __ERC20_init(name, symbol);
+        __Pausable_init();
         _grantRole(DEFAULT_ADMIN_ROLE, admin);
         _grantRole(PAUSER_ROLE, pauser);
         _grantRole(MINTER_ROLE, minter);
@@ -73,6 +79,7 @@ contract LockedFBTC is Initializable, ERC20Upgradeable, PausableUpgradeable, Acc
         (bytes32 _hash, Request memory _r) = IFireBridge(fbtcBridge).addBurnRequest(_amount);
         require(_hash != bytes32(uint256(0)), "Failed to create a valid burn request.");
         realAmount = _amount - _r.fee;
+        require(realAmount > 0, "Real amount must be greater than zero after fee deduction.");
         _mint(msg.sender, realAmount);
 
         emit MintLockedFbtcRequest(msg.sender, realAmount, _r.fee);
@@ -84,9 +91,11 @@ contract LockedFBTC is Initializable, ERC20Upgradeable, PausableUpgradeable, Acc
         whenNotPaused
         returns (bytes32 _hash, Request memory _r)
     {
-        require(_amount > 0 && _amount <= totalSupply(), "Amount out of limit.");
+        require(_amount > 0, "Amount should be greater than 0.");
+        require(_amount <= totalSupply(), "Amount out of limit.");
 
         (_hash, _r) = IFireBridge(fbtcBridge).addMintRequest(_amount, _depositTxid, _outputIndex);
+        require(_hash != bytes32(uint256(0)), "Failed to create a valid mint request.");
         emit RedeemFbtcRequest(msg.sender, _depositTxid, _outputIndex, _amount);
     }
 
