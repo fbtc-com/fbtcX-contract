@@ -71,6 +71,13 @@ function deployAll(DeploymentParams memory params, address deployer) returns (De
         "lockedFBTC"
     );
 
+    // Renounce all roles, now that we have deployed everything
+    // Keep roles only if the deployer was also set as admin or upgrader, repspectively.
+    if (deployer != params.admin) {
+        proxyAdmin.grantRole(proxyAdmin.TIMELOCK_ADMIN_ROLE(), params.admin);
+        proxyAdmin.renounceRole(proxyAdmin.TIMELOCK_ADMIN_ROLE(), deployer);
+    }
+
     if (deployer != params.upgrader) {
         proxyAdmin.renounceRole(proxyAdmin.PROPOSER_ROLE(), deployer);
         proxyAdmin.renounceRole(proxyAdmin.EXECUTOR_ROLE(), deployer);
@@ -117,6 +124,12 @@ function upgradeToAndCall(
     bytes memory data
 ) {
     upgradeToAndCall(controller, proxy, implementation, 0, data);
+}
+
+function upgradeTo(TimelockController controller, ITransparentUpgradeableProxy proxy, address implementation) {
+    scheduleAndExecute(
+        controller, address(proxy), 0, abi.encodeCall(ITransparentUpgradeableProxy.upgradeTo, (implementation))
+    );
 }
 
 function initLockedFBTC(
