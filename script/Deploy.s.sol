@@ -3,7 +3,7 @@ pragma solidity 0.8.20;
 /* solhint-disable no-console */
 
 import {
-    deployAll, grantAndRenounceAllRoles, grantAllAdminRoles, Deployments, DeploymentParams
+    deployAll, grantAndRenounceAllRoles, grantAllPauseRoles, Deployments, DeploymentParams
 } from "./helpers/Proxy.sol";
 import {console2 as console} from "forge-std/console2.sol";
 import {Base} from "./base.s.sol";
@@ -13,10 +13,10 @@ contract Deploy is Base {
         return DeploymentParams({
             fbtcAddress: vm.envAddress("FBTC_ADDRESS"),
             fireBrdigeAddress: vm.envAddress("FIRE_BRIDGE_ADDRESS"),
-            timeLockAdmin: vm.envAddress("TIMELOCK_ADMIN_ADDRESS"),
-            upgrader: vm.envAddress("UPGRADER_ADDRESS"),
             admin: vm.envAddress("SUPER_ADMIN"),
-            pauser: vm.envAddress("PAUSER_ROLE_ADDRESS"),
+            pauser1: vm.envAddress("PAUSER_ROLE_ADDRESS1"),
+            pauser2: vm.envAddress("PAUSER_ROLE_ADDRESS2"),
+            pauser3: vm.envAddress("PAUSER_ROLE_ADDRESS3"),
             minter: vm.envAddress("MINTER_ROLE_ADDRESS"),
             safetyCommittee: vm.envAddress("SAFETY_COMMITTEE")
         });
@@ -42,14 +42,9 @@ contract Deploy is Base {
         Deployments memory ds = readDeployments();
 
         vm.startBroadcast();
+        grantAllPauseRoles(params, ds);
         grantAndRenounceAllRoles(params, ds, msg.sender);
         vm.stopBroadcast();
     }
 
-    function addNewAdminToAllContracts(address newAdmin) public {
-        Deployments memory ds = readDeployments();
-        vm.startBroadcast();
-        grantAllAdminRoles(ds, newAdmin);
-        vm.stopBroadcast();
-    }
 }
