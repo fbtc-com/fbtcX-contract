@@ -22,10 +22,10 @@ struct Deployments {
 }
 
 struct DeploymentParams {
-    address timeLockAdmin;
-    address upgrader;
     address admin;
-    address pauser;
+    address pauser1;
+    address pauser2;
+    address pauser3;
     address minter;
     address safetyCommittee;
     address fbtcAddress;
@@ -39,7 +39,7 @@ function deployAll(DeploymentParams memory params) returns (Deployments memory) 
 /// @notice Deploys all proxy and implementation contract, initializes them and returns a struct containing all the
 /// addresses.
 /// @dev All upgradeable contracts are deployed using the transparent proxy pattern, with the proxy admin being a
-/// timelock controller with `params.upgrader` as proposer and executor, and `params.admin` as timelock admin.
+/// timelock controller with `params.admin` as proposer and executor, and `params.admin` as timelock admin.
 /// The `deployer` will be added as admin, proposer and executer for the duration of the deployment. The permissions are
 /// renounced accordingly at the end of the deployment.
 /// @param params the configuration to use for the deployment.
@@ -47,7 +47,7 @@ function deployAll(DeploymentParams memory params) returns (Deployments memory) 
 /// it will need to be set in tests as `prank`s will not affect `msg.sender` in free functions.
 function deployAll(DeploymentParams memory params, address deployer) returns (Deployments memory) {
     address[] memory controllers = new address[](2);
-    controllers[0] = params.upgrader;
+    controllers[0] = params.admin;
     controllers[1] = deployer;
     TimelockController proxyAdmin =
         new TimelockController({minDelay: 0, admin: deployer, proposers: controllers, executors: controllers});
@@ -63,8 +63,8 @@ function deployAll(DeploymentParams memory params, address deployer) returns (De
         ITransparentUpgradeableProxy(address(ds.lockedFBTC)),
         params.fbtcAddress,
         params.fireBrdigeAddress,
-        params.admin,
-        params.pauser,
+        deployer,
+        params.pauser1,
         params.minter,
         params.safetyCommittee,
         "lockedFBTC",
@@ -72,16 +72,11 @@ function deployAll(DeploymentParams memory params, address deployer) returns (De
     );
 
     // Renounce all roles, now that we have deployed everything
-    // Keep roles only if the deployer was also set as admin or upgrader, repspectively.
+    // Keep roles only if the deployer was also set as admin, repspectively.
     if (deployer != params.admin) {
         proxyAdmin.grantRole(proxyAdmin.TIMELOCK_ADMIN_ROLE(), params.admin);
         proxyAdmin.renounceRole(proxyAdmin.TIMELOCK_ADMIN_ROLE(), deployer);
-    }
-
-    if (deployer != params.upgrader) {
-        proxyAdmin.renounceRole(proxyAdmin.PROPOSER_ROLE(), deployer);
         proxyAdmin.renounceRole(proxyAdmin.EXECUTOR_ROLE(), deployer);
-        proxyAdmin.renounceRole(proxyAdmin.CANCELLER_ROLE(), deployer);
     }
 
     return ds;
@@ -170,10 +165,15 @@ function grantAndRenounce(AccessControlUpgradeable controllable, bytes32 role, a
 /// @notice Grants roles to addresses as specified in `params` and renounces the roles from `sender`.
 /// @dev Assumes that all contracts were deployed using `sender` as admin/manager/etc.
 function grantAndRenounceAllRoles(DeploymentParams memory params, Deployments memory ds, address sender) {
-    //
+    
     grantAndRenounce(ds.lockedFBTC, ds.lockedFBTC.DEFAULT_ADMIN_ROLE(), sender, params.admin);
+    console.log("renounce admin role: ", sender);
+    console.log("new admin role: ", params.admin);
 }
 
-function grantAllAdminRoles(Deployments memory ds, address newAdmin) {
-    //        grantRole(ds.proxyAdmin, ds.proxyAdmin.TIMELOCK_ADMIN_ROLE(), newAdmin);
+function grantAllPauseRoles(DeploymentParams memory params, Deployments memory ds) {
+           grantRole(ds.lockedFBTC, ds.lockedFBTC.PAUSER_ROLE(), params.pauser2);
+           grantRole(ds.lockedFBTC, ds.lockedFBTC.PAUSER_ROLE(), params.pauser3);
+           console.log("new pauser role2: ", params.pauser2);
+           console.log("new pauser role3: ", params.pauser3);
 }

@@ -11,7 +11,6 @@ import {TimelockController} from "openzeppelin-contracts/contracts/governance/Ti
 import {Request, Operation, Status} from "../src/Common.sol";
 
 contract BaseTest is Test {
-    address public immutable timeLockAdmin = makeAddr("admin");
     address public immutable upgrader = makeAddr("upgrader");
 
     address public immutable admin = makeAddr("admin");
@@ -27,7 +26,7 @@ contract BaseTest is Test {
         address[] memory operators = new address[](1);
         operators[0] = address(this);
         proxyAdmin =
-            new TimelockController({minDelay: 0, proposers: operators, executors: operators, admin: timeLockAdmin});
+            new TimelockController({minDelay: 0, proposers: operators, executors: operators, admin: admin});
 
         vm.warp(2);
     }
@@ -37,10 +36,10 @@ contract BaseTest is Test {
         return DeploymentParams({
             fbtcAddress: vm.envAddress("FBTC_ADDRESS"),
             fireBrdigeAddress: vm.envAddress("FIRE_BRIDGE_ADDRESS"),
-            timeLockAdmin: vm.envAddress("TIMELOCK_ADMIN_ADDRESS"),
-            upgrader: vm.envAddress("UPGRADER_ADDRESS"),
             admin: vm.envAddress("SUPER_ADMIN"),
-            pauser: vm.envAddress("PAUSER_ROLE_ADDRESS"),
+            pauser1: vm.envAddress("PAUSER_ROLE_ADDRESS"),
+            pauser2: vm.envAddress("PAUSER_ROLE_ADDRESS"),
+            pauser3: vm.envAddress("PAUSER_ROLE_ADDRESS"),
             minter: vm.envAddress("MINTER_ROLE_ADDRESS"),
             safetyCommittee: vm.envAddress("SAFETY_COMMITTEE")
         });
