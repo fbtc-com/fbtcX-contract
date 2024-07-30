@@ -37,6 +37,7 @@ contract BaseTest is Test {
             fbtcAddress: vm.envAddress("FBTC_ADDRESS"),
             fireBrdigeAddress: vm.envAddress("FIRE_BRIDGE_ADDRESS"),
             admin: vm.envAddress("SUPER_ADMIN"),
+            proposer: vm.envAddress("PROPOSER_ADDRESS"),
             pauser1: vm.envAddress("PAUSER_ROLE_ADDRESS"),
             pauser2: vm.envAddress("PAUSER_ROLE_ADDRESS"),
             pauser3: vm.envAddress("PAUSER_ROLE_ADDRESS"),

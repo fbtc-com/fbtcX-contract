@@ -23,6 +23,7 @@ struct Deployments {
 
 struct DeploymentParams {
     address admin;
+    address proposer;
     address pauser1;
     address pauser2;
     address pauser3;
@@ -49,6 +50,7 @@ function deployAll(DeploymentParams memory params, address deployer) returns (De
     address[] memory controllers = new address[](2);
     controllers[0] = params.admin;
     controllers[1] = deployer;
+    controllers[2] = params.proposer;
     TimelockController proxyAdmin =
         new TimelockController({minDelay: 0, admin: deployer, proposers: controllers, executors: controllers});
 
@@ -76,6 +78,8 @@ function deployAll(DeploymentParams memory params, address deployer) returns (De
     if (deployer != params.admin) {
         proxyAdmin.grantRole(proxyAdmin.TIMELOCK_ADMIN_ROLE(), params.admin);
         proxyAdmin.renounceRole(proxyAdmin.TIMELOCK_ADMIN_ROLE(), deployer);
+        proxyAdmin.renounceRole(proxyAdmin.PROPOSER_ROLE(), deployer);
+        proxyAdmin.renounceRole(proxyAdmin.EXECUTOR_ROLE(), params.proposer);
         proxyAdmin.renounceRole(proxyAdmin.EXECUTOR_ROLE(), deployer);
     }
 

@@ -14,6 +14,7 @@ contract Deploy is Base {
             fbtcAddress: vm.envAddress("FBTC_ADDRESS"),
             fireBrdigeAddress: vm.envAddress("FIRE_BRIDGE_ADDRESS"),
             admin: vm.envAddress("SUPER_ADMIN"),
+            proposer: vm.envAddress("PROPOSER_ADDRESS"),
             pauser1: vm.envAddress("PAUSER_ROLE_ADDRESS1"),
             pauser2: vm.envAddress("PAUSER_ROLE_ADDRESS2"),
             pauser3: vm.envAddress("PAUSER_ROLE_ADDRESS3"),
