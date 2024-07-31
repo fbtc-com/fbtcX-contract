@@ -11,7 +11,7 @@ contract Base is Script {
 
     function _deploymentsFile() internal view returns (string memory) {
         string memory root = vm.projectRoot();
-        return string.concat(root, "/deployments/", vm.toString(block.chainid));
+        return string.concat(root, "/deployments/Avalon/", vm.toString(block.chainid));
     }
 
     function writeDeployments(Deployments memory deps) public {
