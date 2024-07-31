@@ -47,12 +47,14 @@ function deployAll(DeploymentParams memory params) returns (Deployments memory) 
 /// @param deployer the address executing this function. While this will always be `msg.sender` in deployement scripts,
 /// it will need to be set in tests as `prank`s will not affect `msg.sender` in free functions.
 function deployAll(DeploymentParams memory params, address deployer) returns (Deployments memory) {
-    address[] memory controllers = new address[](2);
-    controllers[0] = params.admin;
-    controllers[1] = deployer;
-    controllers[2] = params.proposer;
+    address[] memory executors = new address[](2);
+     address[] memory proposers = new address[](2);
+    executors[0] = params.admin;
+    executors[1] = deployer;
+    proposers[0] = params.proposer;
+    proposers[1] = deployer;
     TimelockController proxyAdmin =
-        new TimelockController({minDelay: 0, admin: deployer, proposers: controllers, executors: controllers});
+        new TimelockController({minDelay: 0, admin: deployer, proposers: proposers, executors: executors});
 
     // Create empty contract for proxy pointer
     EmptyContract empty = new EmptyContract();
@@ -79,7 +81,6 @@ function deployAll(DeploymentParams memory params, address deployer) returns (De
         proxyAdmin.grantRole(proxyAdmin.TIMELOCK_ADMIN_ROLE(), params.admin);
         proxyAdmin.renounceRole(proxyAdmin.TIMELOCK_ADMIN_ROLE(), deployer);
         proxyAdmin.renounceRole(proxyAdmin.PROPOSER_ROLE(), deployer);
-        proxyAdmin.renounceRole(proxyAdmin.EXECUTOR_ROLE(), params.proposer);
         proxyAdmin.renounceRole(proxyAdmin.EXECUTOR_ROLE(), deployer);
     }
 
