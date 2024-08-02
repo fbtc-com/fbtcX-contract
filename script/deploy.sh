@@ -10,6 +10,7 @@ forge script script/deploy.s.sol:Deploy \
 --verify \
 --verifier blockscout \
 --verifier-url "https://explorer.mantle.xyz/api?" \
+--via-ir \
 --broadcast \
 --slow
 
@@ -19,6 +20,7 @@ forge script script/deploy.s.sol:Deploy \
 --rpc-url $FOUNDRY_RPC_URL \
 --private-key $PRIVATE_KEY \
 -g 2000000 \
+--via-ir \
 --broadcast \
 --slow
 
@@ -53,6 +55,7 @@ forge script script/deploy.s.sol:Deploy \
 --private-key $PRIVATE_KEY \
 --verify \
 --verifier-url "https://api.bscscan.com/api?" \
+--via-ir \
 --broadcast \
 --slow
 
@@ -62,4 +65,5 @@ forge script script/deploy.s.sol:Deploy \
 --rpc-url $FOUNDRY_RPC_URL \
 --private-key $PRIVATE_KEY \
 --broadcast \
+--via-ir \
 --slow

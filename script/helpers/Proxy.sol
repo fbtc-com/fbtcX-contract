@@ -16,6 +16,11 @@ import {console2 as console} from "forge-std/console2.sol";
 // This helps avoid the cyclic dependencies in init.
 contract EmptyContract {}
 
+interface ICreate2Deployer {
+    function deploy(uint256 value, bytes32 salt, bytes memory code) external;
+    function computeAddress(bytes32 salt, bytes32 codeHash) external view returns (address);
+}
+
 struct Deployments {
     TimelockController proxyAdmin;
     LockedFBTC lockedFBTC;
@@ -31,11 +36,16 @@ struct DeploymentParams {
     address safetyCommittee;
     address fbtcAddress;
     address fireBrdigeAddress;
+    address create2Deployer;
 }
 
 function deployAll(DeploymentParams memory params) returns (Deployments memory) {
     return deployAll(params, msg.sender);
 }
+
+    function deploy2All(DeploymentParams memory params) returns (Deployments memory) {
+        return deploy2All(params, msg.sender);
+    }
 
 /// @notice Deploys all proxy and implementation contract, initializes them and returns a struct containing all the
 /// addresses.
@@ -77,6 +87,75 @@ function deployAll(DeploymentParams memory params, address deployer) returns (De
 
     // Renounce all roles, now that we have deployed everything
     // Keep roles only if the deployer was also set as admin, repspectively.
+    if (deployer != params.admin) {
+        proxyAdmin.grantRole(proxyAdmin.TIMELOCK_ADMIN_ROLE(), params.admin);
+        proxyAdmin.renounceRole(proxyAdmin.TIMELOCK_ADMIN_ROLE(), deployer);
+        proxyAdmin.renounceRole(proxyAdmin.PROPOSER_ROLE(), deployer);
+        proxyAdmin.renounceRole(proxyAdmin.EXECUTOR_ROLE(), deployer);
+    }
+
+    return ds;
+}
+
+function deploy2All(DeploymentParams memory params, address deployer) returns (Deployments memory) {
+    address[] memory executors = new address[](2);
+    address[] memory proposers = new address[](2);
+    executors[0] = params.admin;
+    executors[1] = deployer;
+    proposers[0] = params.proposer;
+    proposers[1] = deployer;
+
+    ICreate2Deployer create2Deployer = ICreate2Deployer(params.create2Deployer);
+
+    bytes32 proxyAdminSalt = keccak256(abi.encodePacked(params.admin, params.proposer, deployer));
+    bytes memory proxyAdminCode = abi.encodePacked(
+        type(TimelockController).creationCode,
+        abi.encode(0, proposers, executors, deployer)
+    );
+
+    create2Deployer.deploy(0, proxyAdminSalt, proxyAdminCode);
+    address proxyAdminAddress = create2Deployer.computeAddress(proxyAdminSalt, keccak256(proxyAdminCode));
+    TimelockController proxyAdmin = TimelockController(payable(proxyAdminAddress));
+
+    bytes32 implementationSalt = keccak256(abi.encodePacked(params.fbtcAddress, params.fireBrdigeAddress));
+    bytes memory implementationCode = type(LockedFBTC).creationCode;
+    create2Deployer.deploy(0, implementationSalt, implementationCode);
+
+    address lockedFbtcImplementation = create2Deployer.computeAddress(implementationSalt, keccak256(implementationCode));
+
+    bytes memory initData = abi.encodeWithSignature(
+        "initialize(address,address,address,address,address,address,string,string)",
+        params.fbtcAddress,
+        params.fireBrdigeAddress,
+        deployer,
+        params.pauser1,
+        params.minter,
+        params.safetyCommittee,
+        "lfbtc--L1",
+        "lfbtc--L1"
+    );
+
+    bytes32 proxySalt = keccak256(abi.encodePacked(params.fbtcAddress, params.fireBrdigeAddress, deployer));
+    bytes memory proxyBytecode = abi.encodePacked(
+        type(TransparentUpgradeableProxy).creationCode,
+        abi.encode(
+            lockedFbtcImplementation,
+            proxyAdminAddress,
+            initData
+        )
+    );
+
+    create2Deployer.deploy(0, proxySalt, proxyBytecode);
+
+    address lockedFbtcProxyAddress = create2Deployer.computeAddress(proxySalt, keccak256(proxyBytecode));
+
+    Deployments memory ds = Deployments({
+        proxyAdmin: proxyAdmin,
+        lockedFBTC: LockedFBTC(lockedFbtcProxyAddress)
+    });
+
+    console.log("Implementations proxy: %s", address(ds.lockedFBTC));
+
     if (deployer != params.admin) {
         proxyAdmin.grantRole(proxyAdmin.TIMELOCK_ADMIN_ROLE(), params.admin);
         proxyAdmin.renounceRole(proxyAdmin.TIMELOCK_ADMIN_ROLE(), deployer);
