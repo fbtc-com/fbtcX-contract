@@ -31,6 +31,8 @@ struct DeploymentParams {
     address safetyCommittee;
     address fbtcAddress;
     address fireBrdigeAddress;
+    string name;
+    string symbol;
 }
 
 function deployAll(DeploymentParams memory params) returns (Deployments memory) {
@@ -71,8 +73,8 @@ function deployAll(DeploymentParams memory params, address deployer) returns (De
         params.pauser1,
         params.minter,
         params.safetyCommittee,
-        "lfbtc-Avalon-L1",
-        "lfbtc-Avalon-L1"
+        params.name,
+        params.symbol
     );
 
     // Renounce all roles, now that we have deployed everything

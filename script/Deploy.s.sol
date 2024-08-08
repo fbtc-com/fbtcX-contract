@@ -19,7 +19,9 @@ contract Deploy is Base {
             pauser2: vm.envAddress("PAUSER_ROLE_ADDRESS2"),
             pauser3: vm.envAddress("PAUSER_ROLE_ADDRESS3"),
             minter: vm.envAddress("MINTER_ROLE_ADDRESS"),
-            safetyCommittee: vm.envAddress("SAFETY_COMMITTEE")
+            safetyCommittee: vm.envAddress("SAFETY_COMMITTEE"),
+            name: vm.envString("TOKEN_NAME"),
+            symbol: vm.envString("TOKEN_SYMBOL")
         });
     }
 
@@ -33,6 +35,16 @@ contract Deploy is Base {
         writeDeployments(deps);
     }
 
+    function deploy(string memory projectName) public {
+        DeploymentParams memory params = _readDeploymentParamsFromEnv();
+        vm.startBroadcast();
+        Deployments memory deps = deployAll(params);
+        vm.stopBroadcast();
+
+        logDeployments(deps);
+        writeDeployments(projectName, deps);
+    }
+
     function logDeployments(Deployments memory deps) public view {
         console.log("Deployments:");
         console.log("lockedFBTC address: %s", address(deps.lockedFBTC));
@@ -41,6 +53,16 @@ contract Deploy is Base {
     function transferAllRoles() public {
         DeploymentParams memory params = _readDeploymentParamsFromEnv();
         Deployments memory ds = readDeployments();
+
+        vm.startBroadcast();
+        grantAllPauseRoles(params, ds);
+        grantAndRenounceAllRoles(params, ds, msg.sender);
+        vm.stopBroadcast();
+    }
+
+    function transferAllRoles(string memory projectName) public {
+        DeploymentParams memory params = _readDeploymentParamsFromEnv();
+        Deployments memory ds = readDeployments(projectName);
 
         vm.startBroadcast();
         grantAllPauseRoles(params, ds);
