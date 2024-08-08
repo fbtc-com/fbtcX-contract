@@ -19,9 +19,7 @@ contract Deploy is Base {
             pauser2: vm.envAddress("PAUSER_ROLE_ADDRESS2"),
             pauser3: vm.envAddress("PAUSER_ROLE_ADDRESS3"),
             minter: vm.envAddress("MINTER_ROLE_ADDRESS"),
-            safetyCommittee: vm.envAddress("SAFETY_COMMITTEE"),
-            name: vm.envString("TOKEN_NAME"),
-            symbol: vm.envString("TOKEN_SYMBOL")
+            safetyCommittee: vm.envAddress("SAFETY_COMMITTEE")
         });
     }
 

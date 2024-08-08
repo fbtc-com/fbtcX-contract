@@ -42,9 +42,7 @@ contract BaseTest is Test {
             pauser2: vm.envAddress("PAUSER_ROLE_ADDRESS"),
             pauser3: vm.envAddress("PAUSER_ROLE_ADDRESS"),
             minter: vm.envAddress("MINTER_ROLE_ADDRESS"),
-            safetyCommittee: vm.envAddress("SAFETY_COMMITTEE"),
-            name: vm.envAddress("TOKEN_NAME"),
-            symbol: vm.envAddress("TOKEN_SYMBOL")
+            safetyCommittee: vm.envAddress("SAFETY_COMMITTEE")
         });
     }
 

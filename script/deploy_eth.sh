@@ -31,7 +31,6 @@ forge script script/deploy.s.sol:Deploy \
 --private-key $PRIVATE_KEY \
 --verify \
 --verifier-url "https://api.etherscan.io/api?" \
---via-ir \
 --broadcast \
 --slow
 
@@ -42,7 +41,6 @@ forge script script/deploy.s.sol:Deploy \
 --legacy \
 --rpc-url $FOUNDRY_RPC_URL \
 --private-key $PRIVATE_KEY \
---via-ir \
 --broadcast \
 --slow
 

@@ -32,8 +32,7 @@ forge script script/deploy.s.sol:Deploy \
 -g 2000000 \
 --verify \
 --verifier blockscout \
---verifier-url "https://explorer.sepolia.mantle.xyz/api?" \
---via-ir \
+--verifier-url "https://explorer.mantle.xyz/api?" \
 --broadcast \
 --slow
 
@@ -45,7 +44,6 @@ forge script script/deploy.s.sol:Deploy \
 --rpc-url $FOUNDRY_RPC_URL \
 --private-key $PRIVATE_KEY \
 -g 2000000 \
---via-ir \
 --broadcast \
 --slow
 
