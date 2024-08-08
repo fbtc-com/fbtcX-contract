@@ -29,7 +29,7 @@ forge script script/deploy.s.sol:Deploy \
 --priority-gas-price 0 \
 --rpc-url $FOUNDRY_RPC_URL \
 --private-key $PRIVATE_KEY \
--g 2000000 \
+--skip-simulation \
 --verify \
 --verifier blockscout \
 --verifier-url "https://explorer.mantle.xyz/api?" \
@@ -43,7 +43,7 @@ forge script script/deploy.s.sol:Deploy \
 --priority-gas-price 0 \
 --rpc-url $FOUNDRY_RPC_URL \
 --private-key $PRIVATE_KEY \
--g 2000000 \
+--skip-simulation \
 --broadcast \
 --slow
 
