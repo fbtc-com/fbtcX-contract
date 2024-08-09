@@ -11,15 +11,31 @@ contract Base is Script {
 
     function _deploymentsFile() internal view returns (string memory) {
         string memory root = vm.projectRoot();
-        return string.concat(root, "/deployments/Avalon/", vm.toString(block.chainid));
+        return string.concat(root, "/deployments/", vm.toString(block.chainid));
+    }
+
+    function _deploymentsFile(string memory subfolder) internal view returns (string memory) {
+        string memory root = vm.projectRoot();
+        return string.concat(root, "/deployments/", subfolder, "/", vm.toString(block.chainid));
     }
 
     function writeDeployments(Deployments memory deps) public {
         vm.writeFileBinary(_deploymentsFile(), abi.encode(deps));
     }
 
+    function writeDeployments(string memory subfolder, Deployments memory deps) public {
+        vm.writeFileBinary(_deploymentsFile(subfolder), abi.encode(deps));
+    }
+
     function readDeployments() public view returns (Deployments memory) {
         bytes memory data = vm.readFileBinary(_deploymentsFile());
+        Deployments memory depls = abi.decode(data, (Deployments));
+
+        require(address(depls.lockedFBTC).code.length > 0, "contracts are not deployed yet");
+        return depls;
+    }
+    function readDeployments(string memory subfolder) public view returns (Deployments memory) {
+        bytes memory data = vm.readFileBinary(_deploymentsFile(subfolder));
         Deployments memory depls = abi.decode(data, (Deployments));
 
         require(address(depls.lockedFBTC).code.length > 0, "contracts are not deployed yet");

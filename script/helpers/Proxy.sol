@@ -71,8 +71,8 @@ function deployAll(DeploymentParams memory params, address deployer) returns (De
         params.pauser1,
         params.minter,
         params.safetyCommittee,
-        "lfbtc-Avalon-L1",
-        "lfbtc-Avalon-L1"
+        "TOKEN_NAME",
+        "TOKEN_SYMBOL"
     );
 
     // Renounce all roles, now that we have deployed everything
