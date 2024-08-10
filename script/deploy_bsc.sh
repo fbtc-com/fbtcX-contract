@@ -10,7 +10,7 @@ PROJECT_NAME=$1
 
 # Load environment variables from .env file
 if [ -f .env ]; then
-  source .env
+  export $(cat .env | grep -v '^#' | xargs)
 else
   echo ".env file not found!"
   exit 1
