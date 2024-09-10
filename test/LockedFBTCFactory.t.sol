@@ -2,16 +2,21 @@
 pragma solidity ^0.8.20;
 
 import {LockedFBTC} from "../src/LockedFBTC.sol";
+import {LockedFBTCFactory} from "../src/LockedFBTCFactory.sol";
 import {BaseTest, Fbtc0Mock, MockFireBridge} from "./BaseTest.sol";
-import {newProxyWithAdmin, newLockedFBTC} from "./utils/Deploy.s.sol";
+import {newProxyWithAdmin, newLockedFBTC, newLockedFBTCFactory} from "./utils/Deploy.s.sol";
+import {UpgradeableBeacon} from "@openzeppelin/contracts/proxy/beacon/UpgradeableBeacon.sol";
 import {
-    ITransparentUpgradeableProxy,
-    TransparentUpgradeableProxy
+ITransparentUpgradeableProxy,
+TransparentUpgradeableProxy
 } from "openzeppelin-contracts/contracts/proxy/transparent/TransparentUpgradeableProxy.sol";
 import {Request} from "../src/Common.sol";
 import {console2 as console} from "forge-std/console2.sol";
 
-contract LockedFBTCTest is BaseTest {
+contract LockedFBTCFactoryTest is BaseTest {
+
+    LockedFBTCFactory public lockedFBTCFactory;
+    LockedFBTC public lockedFBTCImpl;
     LockedFBTC public lockedFBTC;
     Fbtc0Mock public fbtc0Mock;
     MockFireBridge public mockBridge;
@@ -19,31 +24,50 @@ contract LockedFBTCTest is BaseTest {
     function setUp() public {
         fbtc0Mock = new Fbtc0Mock();
         mockBridge = new MockFireBridge(address(fbtc0Mock));
-        lockedFBTC = LockedFBTC(address(newProxyWithAdmin(proxyAdmin)));
-
+        lockedFBTCImpl = new LockedFBTC();
+        lockedFBTCFactory = LockedFBTCFactory(address(newProxyWithAdmin(proxyAdmin)));
+        UpgradeableBeacon beacon = new UpgradeableBeacon(address(lockedFBTCImpl));
         address[] memory pausers = new address[](1);
-
         pausers[0] = pauser;
-        lockedFBTC = newLockedFBTC(
+        lockedFBTCFactory = newLockedFBTCFactory(
             proxyAdmin,
-            ITransparentUpgradeableProxy(address(lockedFBTC)),
-            address(fbtc0Mock),
-            address(mockBridge),
-            admin,
-            pausers,
-            minter,
-            safetyCommittee,
-            "testToken",
-            "TT"
+            ITransparentUpgradeableProxy(address(lockedFBTCFactory)),
+            LockedFBTCFactory.Params({
+                _factoryAdmin: factoryAdmin,
+                _beaconAddress: address(beacon),
+                _fbtcAddress: address(fbtc0Mock),
+                _fbtcBridgeAddress: address(mockBridge),
+                _lockedFbtcAdmin: lockedFbtcAdmin,
+                _pausers: pausers,
+                _safetyCommittee: safetyCommittee
+            })
         );
 
         // Mint some mock tokens to user
         fbtc0Mock.mint(user, 1000 * 10 ** 8);
         fbtc0Mock.mint(minter, 500 * 10 ** 8);
+
+        vm.startPrank(minter);
+        vm.deal(minter, 1 ether);
+        address fbtc1 = lockedFBTCFactory.deployLockedFBTC(minter,"name","symbol");
+        lockedFBTC = LockedFBTC(fbtc1);
+
     }
+
 }
 
-contract LockedFBTCVandalTest is LockedFBTCTest {
+//contract LockedFBTCBasicTest is LockedFBTCFactoryTest {
+//
+//    function testDeployLockedFBTC() public {
+//        vm.startPrank(minter);
+//        vm.deal(minter, 1 ether);
+//        address fbtc1 = lockedFBTCFactory.deployLockedFBTC(minter,"name","symbol");
+//        lockedFBTC = LockedFBTC(fbtc1);
+//    }
+//
+//}
+
+contract LockedFBTCVandalTest is LockedFBTCFactoryTest {
     function testMintLockedFBTCRequest() public {
         vm.startPrank(minter);
         vm.deal(minter, 1 ether);
@@ -70,7 +94,7 @@ contract LockedFBTCVandalTest is LockedFBTCTest {
         lockedFBTC.mintLockedFbtcRequest(500 * 10 ** 8);
 
         (bytes32 mintRequestHash, Request memory request) =
-            mockBridge.addMintRequest(300 * 10 ** 8, bytes32("0xabc"), 1);
+                            mockBridge.addMintRequest(300 * 10 ** 8, bytes32("0xabc"), 1);
 
         lockedFBTC.redeemFbtcRequest(300 * 10 ** 8, bytes32("0xabc"), 1);
 
@@ -138,29 +162,29 @@ contract LockedFBTCVandalTest is LockedFBTCTest {
     }
 
     function testPause() public {
-        vm.prank(minter);
+        vm.startPrank(minter);
         vm.expectRevert(missingRoleError(minter, keccak256("PAUSER_ROLE")));
         lockedFBTC.pause();
 
         // Pause by authorized pauser should succeed
-        vm.prank(pauser);
+        vm.startPrank(pauser);
         lockedFBTC.pause();
 
         assertTrue(lockedFBTC.paused(), "Contract should be paused.");
     }
 
     function testUnpause() public {
-        vm.prank(pauser);
+        vm.startPrank(pauser);
         lockedFBTC.pause();
         assertTrue(lockedFBTC.paused(), "Contract should be paused.");
 
         // Attempt to unpause by non-authorized user should fail
-        vm.prank(minter);
+        vm.startPrank(minter);
         vm.expectRevert(missingRoleError(minter, 0x00));
         lockedFBTC.unpause();
 
         // Unpause by authorized pauser should succeed
-        vm.prank(admin);
+        vm.startPrank(lockedFbtcAdmin);
         lockedFBTC.unpause();
 
         assertFalse(lockedFBTC.paused(), "Contract should be unpaused.");

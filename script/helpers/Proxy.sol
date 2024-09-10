@@ -24,9 +24,7 @@ struct Deployments {
 struct DeploymentParams {
     address admin;
     address proposer;
-    address pauser1;
-    address pauser2;
-    address pauser3;
+    address[] pausers;
     address minter;
     address safetyCommittee;
     address fbtcAddress;
@@ -48,7 +46,7 @@ function deployAll(DeploymentParams memory params) returns (Deployments memory) 
 /// it will need to be set in tests as `prank`s will not affect `msg.sender` in free functions.
 function deployAll(DeploymentParams memory params, address deployer) returns (Deployments memory) {
     address[] memory executors = new address[](2);
-     address[] memory proposers = new address[](2);
+    address[] memory proposers = new address[](2);
     executors[0] = params.admin;
     executors[1] = deployer;
     proposers[0] = params.proposer;
@@ -68,7 +66,7 @@ function deployAll(DeploymentParams memory params, address deployer) returns (De
         params.fbtcAddress,
         params.fireBrdigeAddress,
         deployer,
-        params.pauser1,
+        params.pausers,
         params.minter,
         params.safetyCommittee,
         "TOKEN_NAME",
@@ -138,7 +136,7 @@ function initLockedFBTC(
     address fbtcAddress,
     address fireBrdigeAddress,
     address admin,
-    address pauser,
+    address[] memory pausers,
     address minter,
     address safetyCommittee,
     string memory name,
@@ -150,7 +148,7 @@ function initLockedFBTC(
         proxyAdmin,
         proxy,
         address(impl),
-        abi.encodeCall(LockedFBTC.initialize, (fbtcAddress, fireBrdigeAddress, admin, pauser, minter, safetyCommittee, name, symbol))
+        abi.encodeCall(LockedFBTC.initialize, (fbtcAddress, fireBrdigeAddress, admin, pausers, minter, safetyCommittee, name, symbol))
     );
     return LockedFBTC(address(proxy));
 }
@@ -177,8 +175,8 @@ function grantAndRenounceAllRoles(DeploymentParams memory params, Deployments me
 }
 
 function grantAllPauseRoles(DeploymentParams memory params, Deployments memory ds) {
-           grantRole(ds.lockedFBTC, ds.lockedFBTC.PAUSER_ROLE(), params.pauser2);
-           grantRole(ds.lockedFBTC, ds.lockedFBTC.PAUSER_ROLE(), params.pauser3);
-           console.log("new pauser role2: ", params.pauser2);
-           console.log("new pauser role3: ", params.pauser3);
+//           grantRole(ds.lockedFBTC, ds.lockedFBTC.PAUSER_ROLE(), params.pauser2);
+//           grantRole(ds.lockedFBTC, ds.lockedFBTC.PAUSER_ROLE(), params.pauser3);
+//           console.log("new pauser role2: ", params.pauser2);
+//           console.log("new pauser role3: ", params.pauser3);
 }

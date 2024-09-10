@@ -101,7 +101,7 @@ contract Upgrade is Base {
         address fbtcAddress,
         address fireBrdigeAddress,
         address admin,
-        address pauser,
+        address[] memory pausers,
         address minter,
         address safetyCommittee,
         string memory name,
@@ -114,7 +114,7 @@ contract Upgrade is Base {
         vm.stopBroadcast();
 
         // The initialize method for LockedFBTC needs to be overwritten as the reinitialize method
-        bytes memory callData = abi.encodeCall(ITransparentUpgradeableProxy.upgradeToAndCall, (implAddress,abi.encodeCall(LockedFBTC.initialize, (fbtcAddress, fireBrdigeAddress, admin, pauser, minter, safetyCommittee, name, symbol))));
+        bytes memory callData = abi.encodeCall(ITransparentUpgradeableProxy.upgradeToAndCall, (implAddress,abi.encodeCall(LockedFBTC.initialize, (fbtcAddress, fireBrdigeAddress, admin, pausers, minter, safetyCommittee, name, symbol))));
 
         console.log("=============================");
         console.log("Onchain addresses");

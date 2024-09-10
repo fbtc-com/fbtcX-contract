@@ -10,14 +10,19 @@ import {Base} from "./base.s.sol";
 
 contract Deploy is Base {
     function _readDeploymentParamsFromEnv() internal view returns (DeploymentParams memory) {
+        // Reading environment variables for pauser addresses and storing them in an array address;
+        address[] memory pausers = new address[](3);
+        pausers[0] = vm.envAddress("PAUSER_ROLE_ADDRESS1");
+        pausers[1] = vm.envAddress("PAUSER_ROLE_ADDRESS2");
+        pausers[2] = vm.envAddress("PAUSER_ROLE_ADDRESS3");
+
+        // Returning deployment parameters with the pauser array
         return DeploymentParams({
             fbtcAddress: vm.envAddress("FBTC_ADDRESS"),
             fireBrdigeAddress: vm.envAddress("FIRE_BRIDGE_ADDRESS"),
             admin: vm.envAddress("SUPER_ADMIN"),
             proposer: vm.envAddress("PROPOSER_ADDRESS"),
-            pauser1: vm.envAddress("PAUSER_ROLE_ADDRESS1"),
-            pauser2: vm.envAddress("PAUSER_ROLE_ADDRESS2"),
-            pauser3: vm.envAddress("PAUSER_ROLE_ADDRESS3"),
+            pausers: pausers,
             minter: vm.envAddress("MINTER_ROLE_ADDRESS"),
             safetyCommittee: vm.envAddress("SAFETY_COMMITTEE")
         });
