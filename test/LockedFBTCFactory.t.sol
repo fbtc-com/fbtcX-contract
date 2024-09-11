@@ -2,8 +2,9 @@
 pragma solidity ^0.8.20;
 
 import {LockedFBTC} from "../src/LockedFBTC.sol";
-import {LockedFBTCFactory} from "../src/LockedFBTCFactory.sol";
+import {LockedFBTCFactory, ProtocolEvents} from "../src/LockedFBTCFactory.sol";
 import {BaseTest, Fbtc0Mock, MockFireBridge} from "./BaseTest.sol";
+import {Create2Deployer} from "./utils/Create2Deployer.sol";
 import {newProxyWithAdmin, newLockedFBTC, newLockedFBTCFactory} from "./utils/Deploy.s.sol";
 import {UpgradeableBeacon} from "@openzeppelin/contracts/proxy/beacon/UpgradeableBeacon.sol";
 import {
@@ -20,15 +21,21 @@ contract LockedFBTCFactoryTest is BaseTest {
     LockedFBTC public lockedFBTC;
     Fbtc0Mock public fbtc0Mock;
     MockFireBridge public mockBridge;
+    Create2Deployer public create2Deployer;
+    address public immutable newAdmin = makeAddr("admin1");
 
     function setUp() public {
         fbtc0Mock = new Fbtc0Mock();
         mockBridge = new MockFireBridge(address(fbtc0Mock));
+        create2Deployer = new Create2Deployer();
         lockedFBTCImpl = new LockedFBTC();
         lockedFBTCFactory = LockedFBTCFactory(address(newProxyWithAdmin(proxyAdmin)));
         UpgradeableBeacon beacon = new UpgradeableBeacon(address(lockedFBTCImpl));
         address[] memory pausers = new address[](1);
         pausers[0] = pauser;
+
+        bytes32 salt = keccak256(abi.encodePacked(address(fbtc0Mock)));
+
         lockedFBTCFactory = newLockedFBTCFactory(
             proxyAdmin,
             ITransparentUpgradeableProxy(address(lockedFBTCFactory)),
@@ -40,7 +47,9 @@ contract LockedFBTCFactoryTest is BaseTest {
                 _lockedFbtcAdmin: lockedFbtcAdmin,
                 _pausers: pausers,
                 _safetyCommittee: safetyCommittee
-            })
+            }),
+            salt,
+            address(create2Deployer)
         );
 
         // Mint some mock tokens to user
@@ -49,25 +58,38 @@ contract LockedFBTCFactoryTest is BaseTest {
 
         vm.startPrank(minter);
         vm.deal(minter, 1 ether);
-        address fbtc1 = lockedFBTCFactory.deployLockedFBTC(minter,"name","symbol");
+        address fbtc1 = lockedFBTCFactory.createLockedFBTC(minter,"name","symbol");
         lockedFBTC = LockedFBTC(fbtc1);
 
     }
 
 }
 
-//contract LockedFBTCBasicTest is LockedFBTCFactoryTest {
-//
-//    function testDeployLockedFBTC() public {
-//        vm.startPrank(minter);
-//        vm.deal(minter, 1 ether);
-//        address fbtc1 = lockedFBTCFactory.deployLockedFBTC(minter,"name","symbol");
-//        lockedFBTC = LockedFBTC(fbtc1);
-//    }
-//
-//}
+contract LockedFBTCBasicTest is LockedFBTCFactoryTest, ProtocolEvents {
 
-contract LockedFBTCVandalTest is LockedFBTCFactoryTest {
+    function testDeployLockedFBTC() public {
+        vm.startPrank(minter);
+        vm.deal(minter, 1 ether);
+        address fbtc1 = lockedFBTCFactory.createLockedFBTC(minter,"name","symbol");
+        lockedFBTC = LockedFBTC(fbtc1);
+    }
+
+    function testSetAdminAddress() public {
+
+        vm.startPrank(factoryAdmin);
+        vm.expectEmit(true,true,true,true);
+        // Verify that the ProtocolConfigChanged event has been triggered.
+        emit ProtocolConfigChanged(
+            lockedFBTCFactory.setAdmin.selector,
+            "setAdmin(address)",
+            abi.encode(newAdmin)
+        );
+        lockedFBTCFactory.setAdmin(newAdmin);
+        assertEq(lockedFBTCFactory.lockedFbtcAdmin(), newAdmin);
+    }
+}
+
+contract LockedFBTCTest is LockedFBTCBasicTest {
     function testMintLockedFBTCRequest() public {
         vm.startPrank(minter);
         vm.deal(minter, 1 ether);

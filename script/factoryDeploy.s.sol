@@ -25,7 +25,8 @@ contract Deploy is Base {
             proposer: vm.envAddress("PROPOSER_ADDRESS"),
             pausers: pausers,
             minter: vm.envAddress("MINTER_ROLE_ADDRESS"),
-            safetyCommittee: vm.envAddress("SAFETY_COMMITTEE")
+            safetyCommittee: vm.envAddress("SAFETY_COMMITTEE"),
+            create2Deployer: vm.envAddress("CREATE2_DEPLOYER")
         });
     }
 

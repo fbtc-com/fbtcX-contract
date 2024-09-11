@@ -37,9 +37,11 @@ function newLockedFBTC(
 function newLockedFBTCFactory(
     TimelockController proxyAdmin,
     ITransparentUpgradeableProxy proxy,
-    LockedFBTCFactory.Params memory params
+    LockedFBTCFactory.Params memory params,
+    bytes32 salt,
+    address create2Deployer
 ) returns (LockedFBTCFactory) {
-    return initLockedFBTCFactory(proxyAdmin, proxy, params);
+    return initLockedFBTCFactory(proxyAdmin, proxy, salt, create2Deployer, params);
 }
 
 function testDeployAll(DeploymentParams memory params, address deployer) returns (Deployments memory) {

@@ -16,6 +16,10 @@ import {console2 as console} from "forge-std/console2.sol";
 
 contract EmptyContract {}
 
+interface ICreate2Deployer {
+    function deploy(uint256 value, bytes32 salt, bytes memory code) external;
+    function computeAddress(bytes32 salt, bytes32 codeHash) external view returns (address);
+}
 
 struct FactoryDeployments {
     TimelockController factoryProxyAdmin;
@@ -32,6 +36,7 @@ struct FactoryDeploymentParams {
     address safetyCommittee;
     address fbtcAddress;
     address fireBrdigeAddress;
+    address create2Deployer;
 }
 
 function deployFactoryAll(FactoryDeploymentParams memory params) returns (FactoryDeployments memory) {
@@ -42,15 +47,18 @@ function deployFactoryAll(FactoryDeploymentParams memory params) returns (Factor
 /// @param params Configuration for deployment.
 /// @param deployer The address executing the deployment.
 function deployFactoryAll(FactoryDeploymentParams memory params, address deployer) returns (FactoryDeployments memory) {
+
+    bytes32 salt = keccak256(abi.encodePacked(address(params.fbtcAddress)));
+
     // 1: Create proxy admins
-    TimelockController factoryProxyAdmin = _createTimelockController(deployer, params.factoryAdmin);
-    TimelockController beaconAdmin = _createTimelockControllerWithSingleExecutor(params.proposer, params.lockedFbtcAdmin);
+    TimelockController factoryProxyAdmin = _createTimelockController(deployer, params.factoryAdmin, salt, params.create2Deployer);
+    TimelockController beaconAdmin = _createTimelockControllerWithSingleExecutor(params.proposer, params.lockedFbtcAdmin, salt, params.create2Deployer);
 
     // 2: Deploy the beacon and implementation
-    UpgradeableBeacon beacon = _deployBeacon(beaconAdmin);
+    UpgradeableBeacon beacon = _deployBeacon(beaconAdmin, salt, params.create2Deployer);
 
     // 3: Deploy the LockedFBTCFactory proxy
-    FactoryDeployments memory ds = _deployLockedFBTCFactory(factoryProxyAdmin, beacon, params);
+    FactoryDeployments memory ds = _deployLockedFBTCFactory(factoryProxyAdmin, beacon, params, salt);
 
     // 4: Renounce roles if deployer is not the factoryAdmin
     _renounceRoles(factoryProxyAdmin, deployer, params.factoryAdmin);
@@ -58,7 +66,7 @@ function deployFactoryAll(FactoryDeploymentParams memory params, address deploye
     return ds;
 }
 
-function _createTimelockController(address deployer, address factoryAdmin) returns (TimelockController) {
+function _createTimelockController(address deployer, address factoryAdmin, bytes32 salt, address create2Deployer) returns (TimelockController) {
     address[] memory executors = new address[](2);
     address[] memory proposers = new address[](2);
     proposers[0] = factoryAdmin;
@@ -66,40 +74,64 @@ function _createTimelockController(address deployer, address factoryAdmin) retur
     executors[0] = factoryAdmin;
     executors[1] = deployer;
 
-    return new TimelockController(0, proposers, executors, deployer);
+    bytes memory bytecode = abi.encodePacked(type(TimelockController).creationCode, abi.encode(0, proposers, executors, deployer));
+
+    // Use ICreate2Deployer to deploy the contract via CREATE2
+    ICreate2Deployer(create2Deployer).deploy(0, salt, bytecode);
+    return TimelockController(payable(ICreate2Deployer(create2Deployer).computeAddress(salt, keccak256(bytecode))));
 }
 
-function _createTimelockControllerWithSingleExecutor(address proposer, address executor) returns (TimelockController) {
+function _createTimelockControllerWithSingleExecutor(address proposer, address executor, bytes32 salt, address create2Deployer) returns (TimelockController) {
     address[] memory executors = new address[](1);
     address[] memory proposers = new address[](1);
     proposers[0] = proposer;
     executors[0] = executor;
 
-    return new TimelockController(0, proposers, executors, executor);
+    bytes memory bytecode = abi.encodePacked(type(TimelockController).creationCode, abi.encode(0, proposers, executors, executor));
+
+    // Use ICreate2Deployer to deploy the contract via CREATE2
+    ICreate2Deployer(create2Deployer).deploy(0, salt, bytecode);
+
+    return TimelockController(payable(ICreate2Deployer(create2Deployer).computeAddress(salt, keccak256(bytecode))));
 }
 
-function _deployBeacon(TimelockController beaconAdmin) returns (UpgradeableBeacon) {
-    LockedFBTC lockedFbtcImpl = new LockedFBTC();
-    UpgradeableBeacon beacon = new UpgradeableBeacon(address(lockedFbtcImpl));
+function _deployBeacon(TimelockController beaconAdmin, bytes32 salt, address create2Deployer) returns (UpgradeableBeacon) {
+    bytes memory lockedFbtcBytecode = abi.encodePacked(type(LockedFBTC).creationCode);
+    ICreate2Deployer(create2Deployer).deploy(0, salt, lockedFbtcBytecode);
+    address lockedFbtcImplAddress = ICreate2Deployer(create2Deployer).computeAddress(salt, keccak256(lockedFbtcBytecode));
+
+    bytes memory bytecode = abi.encodePacked(type(UpgradeableBeacon).creationCode, abi.encode(lockedFbtcImplAddress));
+
+    // Use ICreate2Deployer to deploy the UpgradeableBeacon via CREATE2
+    ICreate2Deployer(create2Deployer).deploy(0, salt, bytecode);
+
+    address beaconAddress = ICreate2Deployer(create2Deployer).computeAddress(salt, keccak256(bytecode));
+    UpgradeableBeacon beacon = UpgradeableBeacon(payable(beaconAddress));
     beacon.transferOwnership(address(beaconAdmin));
+
     return beacon;
 }
 
 function _deployLockedFBTCFactory(
     TimelockController factoryProxyAdmin,
     UpgradeableBeacon beacon,
-    FactoryDeploymentParams memory params
+    FactoryDeploymentParams memory params,
+    bytes32 salt
 ) returns (FactoryDeployments memory) {
     // Create an empty contract for the proxy
-    EmptyContract empty = new EmptyContract();
+    bytes memory bytecode = abi.encodePacked(type(EmptyContract).creationCode);
+    ICreate2Deployer(params.create2Deployer).deploy(0, salt, bytecode);
+    address emptyAddress = ICreate2Deployer(params.create2Deployer).computeAddress(salt, keccak256(bytecode));
 
     // Create proxy for the LockedFBTCFactory
-    LockedFBTCFactory factory = LockedFBTCFactory(address(newProxy(empty, factoryProxyAdmin)));
+    LockedFBTCFactory factory = LockedFBTCFactory(address(newProxy(emptyAddress, factoryProxyAdmin, salt, params.create2Deployer)));
 
     // Initialize the factory with the given parameters
     factory = initLockedFBTCFactory(
         factoryProxyAdmin,
         ITransparentUpgradeableProxy(address(factory)),
+        salt,
+        params.create2Deployer,
         LockedFBTCFactory.Params({
             _factoryAdmin: params.factoryAdmin,
             _beaconAddress: address(beacon),
@@ -138,19 +170,44 @@ function newProxy(EmptyContract empty, TimelockController admin) returns (Transp
     return new TransparentUpgradeableProxy(address(empty), address(admin), "");
 }
 
+function newProxy(
+    address empty,
+    TimelockController admin,
+    bytes32 salt,
+    address create2Deployer
+) returns (TransparentUpgradeableProxy) {
+    // Get the bytecode for the TransparentUpgradeableProxy
+    bytes memory proxyCode = abi.encodePacked(
+        type(TransparentUpgradeableProxy).creationCode,
+        abi.encode(empty, address(admin), "")
+    );
+
+    // Deploy the proxy using CREATE2
+    ICreate2Deployer(create2Deployer).deploy(0, salt, proxyCode);
+
+    // Compute the address of the deployed proxy
+    address proxyAddress = ICreate2Deployer(create2Deployer).computeAddress(salt, keccak256(proxyCode));
+
+    return TransparentUpgradeableProxy(payable(proxyAddress));
+}
+
 function initLockedFBTCFactory(
     TimelockController factoryProxyAdmin,
     ITransparentUpgradeableProxy proxy,
+    bytes32 salt,
+    address create2Deployer,
     LockedFBTCFactory.Params memory params
 ) returns (LockedFBTCFactory) {
-    LockedFBTCFactory impl = new LockedFBTCFactory();
-    console.log("LockedFBTCFactory Impl: ", address(impl));
+    bytes memory bytecode = abi.encodePacked(type(LockedFBTCFactory).creationCode);
+    ICreate2Deployer(create2Deployer).deploy(0, salt, bytecode);
+    address implAddress = ICreate2Deployer(create2Deployer).computeAddress(salt, keccak256(bytecode));
+    console.log("LockedFBTCFactory Impl: ", implAddress);
 
     // Initialize the factory with beacon and other params
     upgradeToAndCall(
         factoryProxyAdmin,
         proxy,
-        address(impl),
+        implAddress,
         abi.encodeCall(LockedFBTCFactory.initialize, params)
     );
 

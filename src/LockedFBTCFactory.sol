@@ -93,7 +93,7 @@ contract LockedFBTCFactory is Initializable, ProtocolEvents, PausableUpgradeable
     /// @param _symbol The symbol of the LockedFBTC token.
     ///
     /// @return The address of the newly deployed LockedFBTC proxy contract.
-    function deployLockedFBTC(
+    function createLockedFBTC(
         address _minter,
         string memory _name,
         string memory _symbol
@@ -164,12 +164,12 @@ contract LockedFBTCFactory is Initializable, ProtocolEvents, PausableUpgradeable
         emit ProtocolConfigChanged(this.setSafetyCommittee.selector, "setSafetyCommittee(address)", abi.encode(_safetyCommittee));
     }
 
-    /// @notice Pauses all functions except the emergency burn method.
+    /// @notice Pauses deployLockedFBTC function.
     function pause() public onlyRole(DEFAULT_ADMIN_ROLE) {
         _pause();
     }
 
-    /// @notice Unpauses all functions.
+    /// @notice Unpauses deployLockedFBTC function.
     function unpause() public onlyRole(DEFAULT_ADMIN_ROLE) {
         _unpause();
     }
