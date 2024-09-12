@@ -2,6 +2,7 @@
 pragma solidity 0.8.20;
 
 import {BeaconProxy} from "@openzeppelin/contracts/proxy/beacon/BeaconProxy.sol";
+import {EnumerableSet} from "@openzeppelin/contracts/utils/structs/EnumerableSet.sol";
 import {Initializable} from "@openzeppelin/contracts-upgradeable/proxy/utils/Initializable.sol";
 import {PausableUpgradeable} from "@openzeppelin/contracts-upgradeable/security/PausableUpgradeable.sol";
 import {AccessControlUpgradeable} from "@openzeppelin/contracts-upgradeable/access/AccessControlUpgradeable.sol";
@@ -24,6 +25,8 @@ interface ProtocolEvents {
 
 contract LockedFBTCFactory is Initializable, ProtocolEvents, PausableUpgradeable, AccessControlUpgradeable {
 
+    using EnumerableSet for EnumerableSet.AddressSet;
+
     /// @notice The address of the beacon contract responsible for managing upgradeable proxies.
     address public beaconAddress;
 
@@ -45,8 +48,7 @@ contract LockedFBTCFactory is Initializable, ProtocolEvents, PausableUpgradeable
     /// @notice The address of the safety committee, responsible for emergency actions such as emergency burns.
     address public safetyCommittee;
 
-    mapping(address => address) public lockedFbtcMinters;
-
+    EnumerableSet.AddressSet internal createdLockedFBTCs;
 
     /// @dev Disables initializer function of the inherited contract.
     constructor() {
@@ -114,7 +116,7 @@ contract LockedFBTCFactory is Initializable, ProtocolEvents, PausableUpgradeable
                 _symbol
             )
         );
-        lockedFbtcMinters[_minter] = address(proxy);
+        createdLockedFBTCs.add(address(proxy));
 
         emit LockedFBTCDeployed(_minter, address(proxy));
         return address(proxy);
@@ -172,6 +174,11 @@ contract LockedFBTCFactory is Initializable, ProtocolEvents, PausableUpgradeable
     /// @notice Unpauses deployLockedFBTC function.
     function unpause() public onlyRole(DEFAULT_ADMIN_ROLE) {
         _unpause();
+    }
+
+    /// @notice Get all created lockedFBTC addresses
+    function getCreatedLockedFBTCs() external view returns (address[] memory) {
+        return createdLockedFBTCs.values();
     }
 
 }

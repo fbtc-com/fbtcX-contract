@@ -60,6 +60,8 @@ contract LockedFBTCFactoryTest is BaseTest {
         vm.deal(minter, 1 ether);
         address fbtc1 = lockedFBTCFactory.createLockedFBTC(minter,"name","symbol");
         lockedFBTC = LockedFBTC(fbtc1);
+        console.log("created fbtc1 address: %s", address(fbtc1));
+        assertEq(lockedFBTCFactory.getCreatedLockedFBTCs()[0], fbtc1);
 
     }
 
@@ -72,6 +74,10 @@ contract LockedFBTCBasicTest is LockedFBTCFactoryTest, ProtocolEvents {
         vm.deal(minter, 1 ether);
         address fbtc1 = lockedFBTCFactory.createLockedFBTC(minter,"name","symbol");
         lockedFBTC = LockedFBTC(fbtc1);
+
+        console.log("test fbtc1 address: %s", address(fbtc1));
+
+        assertEq(lockedFBTCFactory.getCreatedLockedFBTCs()[1], fbtc1);
     }
 
     function testSetAdminAddress() public {
@@ -94,7 +100,7 @@ contract LockedFBTCTest is LockedFBTCBasicTest {
         vm.startPrank(minter);
         vm.deal(minter, 1 ether);
 
-        console.log("LockedFBTC address: %s", address(lockedFBTC));
+        console.log("test LockedFBTC address: %s", address(lockedFBTC));
         fbtc0Mock.approve(address(lockedFBTC), 500 * 10 ** 8);
         lockedFBTC.mintLockedFbtcRequest(500 * 10 ** 8);
 
