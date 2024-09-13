@@ -42,9 +42,6 @@ contract LockedFBTCFactory is Initializable, ProtocolEvents, PausableUpgradeable
     /// @notice An array of addresses that have the pauser role, allowing them to pause contract functions.
     address[] public pausers;
 
-    /// @notice The address of the minter, responsible for minting lockedFBTC.
-    address public minter;
-
     /// @notice The address of the safety committee, responsible for emergency actions such as emergency burns.
     address public safetyCommittee;
 
@@ -150,13 +147,6 @@ contract LockedFBTCFactory is Initializable, ProtocolEvents, PausableUpgradeable
         pausers = _pausers;
 
         emit ProtocolConfigChanged(this.setPausers.selector, "setPausers(address)", abi.encode(_pausers));
-    }
-
-    function setMinter(address _minter) external onlyRole(DEFAULT_ADMIN_ROLE) {
-        require(_minter != address(0), "Minter cannot be zero address");
-        minter = _minter;
-
-        emit ProtocolConfigChanged(this.setMinter.selector, "setMinter(address)", abi.encode(_minter));
     }
 
     function setSafetyCommittee(address _safetyCommittee) external onlyRole(DEFAULT_ADMIN_ROLE) {
