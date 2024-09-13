@@ -1,21 +1,31 @@
 // SPDX-License-Identifier: MIT
-pragma solidity 0.8.20;
+pragma solidity ^0.8.20;
 
 import "@openzeppelin/contracts/token/ERC1155/ERC1155.sol";
 import "@openzeppelin/contracts/access/Ownable.sol";
 import "@openzeppelin/contracts/utils/Strings.sol";
-
-contract FBTCIdentity is ERC1155, Ownable {
+import "@openzeppelin/contracts/access/AccessControl.sol";
+contract Vulcan is ERC1155, AccessControl {
     using Strings for uint256;
+    string public name = "Vulcan";
+    string public symbol = "VULCAN";
 
-    /// @notice Base URI for metadata
+/// @notice Base URI for metadata
     string private baseURI;
+    bytes32 public constant MINTER_ROLE = keccak256("MINTER_ROLE");
 
     /// @notice Event emitted when tokens are minted
     event TokenMinted(address indexed to, uint256 indexed tokenId, uint256 amount);
 
-    constructor(string memory _baseURI, address _initialOwner) ERC1155("") Ownable(_initialOwner) {
+    constructor(string memory _baseURI, address _owner) ERC1155("") {
         baseURI = _baseURI;
+        _grantRole(DEFAULT_ADMIN_ROLE, _owner);
+        _grantRole(MINTER_ROLE, _owner);
+    }
+    
+    /// @notice Override supportsInterface to resolve conflict between ERC1155 and AccessControl
+    function supportsInterface(bytes4 interfaceId) public view virtual override(ERC1155, AccessControl) returns (bool) {
+        return super.supportsInterface(interfaceId);
     }
 
     ///@notice Function to get the URI for a specific token
@@ -26,21 +36,30 @@ contract FBTCIdentity is ERC1155, Ownable {
     }
 
     ///@notice Owner-only function to mint new tokens to a specific address
-    function mint(address to, uint256 tokenId, uint256 amount) external onlyOwner {
+    function mint(address to, uint256 tokenId, uint256 amount) external onlyRole(MINTER_ROLE) {
         _mint(to, tokenId, amount, new bytes(0));
         emit TokenMinted(to, tokenId, amount);
     }
 
     ///@notice Owner-only function to mint new tokens to a specific address
-    function mintBatch(address to, uint256[] calldata tokenIds, uint256[] calldata amounts) external onlyOwner {
+    function mintBatch(address to, uint256[] calldata tokenIds, uint256[] calldata amounts) external onlyRole(MINTER_ROLE) {
         _mintBatch(to, tokenIds, amounts, new bytes(0));
         for (uint256 i = 0; i < tokenIds.length; i++) {
             emit TokenMinted(to, tokenIds[i], amounts[i]);
         }
     }
 
+    ///@notice Owner-only function to mint new tokens to multiple addresses
+    function batchMint(address[] calldata to, uint256[] calldata tokenIds, uint256[] calldata amounts) external onlyRole(MINTER_ROLE) {
+        require(to.length == tokenIds.length && to.length == amounts.length, "Invalid input");
+        for (uint256 i = 0; i < to.length; i++) {
+            _mint(to[i], tokenIds[i], amounts[i], new bytes(0));
+            emit TokenMinted(to[i], tokenIds[i], amounts[i]);
+        }
+    }
+
     ///@notice Owner-only function to set the base URI for metadata
-    function setBaseURI(string memory _baseURI) external onlyOwner {
+    function setBaseURI(string memory _baseURI) external onlyRole(MINTER_ROLE) {
         baseURI = _baseURI;
     }
 

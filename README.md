@@ -5,8 +5,9 @@ The locked FBTC has been locked within partner applications, backed by native BT
 ### Build
 
 ```shell
-$ forge install OpenZeppelin/openzeppelin-contracts@v4.9.6 --no-commit
+$ forge install OpenZeppelin/openzeppelin-contracts --no-commit
 $ forge install OpenZeppelin/openzeppelin-contracts-upgradeable@v4.9.6 --no-commit
+$ forge install foundry-rs/forge-std --no-commit
 
 $ forge build
 ```
