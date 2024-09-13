@@ -58,7 +58,7 @@ contract LockedFBTCFactoryTest is BaseTest {
 
         vm.startPrank(minter);
         vm.deal(minter, 1 ether);
-        address fbtc1 = lockedFBTCFactory.createLockedFBTC(minter,"name","symbol");
+        address fbtc1 = lockedFBTCFactory.createLockedFBTC(minter, "name", "symbol");
         lockedFBTC = LockedFBTC(fbtc1);
 
     }
@@ -70,14 +70,14 @@ contract LockedFBTCBasicTest is LockedFBTCFactoryTest, ProtocolEvents {
     function testDeployLockedFBTC() public {
         vm.startPrank(minter);
         vm.deal(minter, 1 ether);
-        address fbtc1 = lockedFBTCFactory.createLockedFBTC(minter,"name","symbol");
+        address fbtc1 = lockedFBTCFactory.createLockedFBTC(minter, "name", "symbol");
         lockedFBTC = LockedFBTC(fbtc1);
     }
 
     function testSetAdminAddress() public {
 
         vm.startPrank(factoryAdmin);
-        vm.expectEmit(true,true,true,true);
+        vm.expectEmit(true, true, true, true);
         // Verify that the ProtocolConfigChanged event has been triggered.
         emit ProtocolConfigChanged(
             lockedFBTCFactory.setAdmin.selector,
@@ -86,6 +86,319 @@ contract LockedFBTCBasicTest is LockedFBTCFactoryTest, ProtocolEvents {
         );
         lockedFBTCFactory.setAdmin(newAdmin);
         assertEq(lockedFBTCFactory.lockedFbtcAdmin(), newAdmin);
+    }
+
+    function testSetAdminAccessControl() public {
+        vm.startPrank(factoryAdmin);
+
+        bytes32 adminRole = lockedFBTCFactory.DEFAULT_ADMIN_ROLE();
+        assertTrue(lockedFBTCFactory.hasRole(adminRole, factoryAdmin));
+
+        vm.stopPrank();
+
+        vm.startPrank(address(1));
+        vm.expectRevert();
+        lockedFBTCFactory.setAdmin(address(2));
+
+        vm.stopPrank();
+    }
+
+    function testRevertWhenSetAdmin() public {
+        vm.startPrank(factoryAdmin);
+        vm.expectRevert("Admin cannot be zero address");
+        address newAdminAddress = address(0);
+        lockedFBTCFactory.setAdmin(newAdminAddress);
+        vm.stopPrank();
+    }
+
+    function testInitialization() public {
+        assertEq(lockedFBTCFactory.fbtcAddress(), address(fbtc0Mock));
+        assertEq(lockedFBTCFactory.fbtcBridgeAddress(), address(mockBridge));
+        assertEq(lockedFBTCFactory.lockedFbtcAdmin(), lockedFbtcAdmin);
+        assertEq(lockedFBTCFactory.safetyCommittee(), safetyCommittee);
+    }
+
+    function testCreateLockedFBTC() public {
+        vm.startPrank(factoryAdmin);
+        string memory name = "Test Locked FBTC";
+        string memory symbol = "TLF";
+        vm.deal(factoryAdmin, 1 ether);
+
+        vm.expectEmit(true, false, false, false);
+        emit LockedFBTCDeployed(minter, address(0));
+
+        address f1ProxyAddress = lockedFBTCFactory.createLockedFBTC(minter, name, symbol);
+
+        assertTrue(f1ProxyAddress != address(0), "Proxy address should be valid");
+        assertEq(lockedFBTCFactory.lockedFbtcMinters(minter), f1ProxyAddress, "Minter to proxy mapping is incorrect");
+        vm.stopPrank();
+    }
+
+    function testPauseAndUnpause() public {
+        vm.startPrank(address(1));
+        vm.expectRevert();
+        lockedFBTCFactory.pause();
+        assertFalse(lockedFBTCFactory.paused());
+
+        lockedFBTCFactory.unpause();
+        assertFalse(lockedFBTCFactory.paused());
+
+        vm.stopPrank();
+    }
+
+    function testPauseAndUnpauseAccessControl() public {
+        vm.startPrank(factoryAdmin);
+
+        lockedFBTCFactory.pause();
+        assertTrue(lockedFBTCFactory.paused());
+
+        lockedFBTCFactory.unpause();
+        assertFalse(lockedFBTCFactory.paused());
+
+        vm.stopPrank();
+    }
+
+    function testCreateRevertWhenPaused() public {
+        vm.startPrank(factoryAdmin);
+        lockedFBTCFactory.pause();
+        vm.expectRevert("Pausable: paused");
+        lockedFBTCFactory.createLockedFBTC(minter, "Test Locked FBTC", "TLF");
+        vm.stopPrank();
+    }
+
+    function testSetFbtcAccessControl() public {
+        vm.startPrank(factoryAdmin);
+
+        bytes32 adminRole = lockedFBTCFactory.DEFAULT_ADMIN_ROLE();
+        assertTrue(lockedFBTCFactory.hasRole(adminRole, factoryAdmin));
+
+        vm.stopPrank();
+
+        vm.startPrank(address(1));
+        vm.expectRevert();
+        lockedFBTCFactory.setFbtcAddress(address(2));
+        vm.stopPrank();
+    }
+
+    function testRevertSetFbtcAddress() public {
+        vm.startPrank(factoryAdmin);
+
+        address newFbtcAddress = address(0);
+        vm.expectRevert("FBTC cannot be zero address");
+        lockedFBTCFactory.setFbtcAddress(newFbtcAddress);
+
+        vm.stopPrank();
+    }
+
+    function testSetFbtcAddress() public {
+        vm.startPrank(factoryAdmin);
+        address newFbtcAddress = address(1);
+
+        vm.expectEmit(true, true, true, true);
+        emit ProtocolConfigChanged(
+            lockedFBTCFactory.setFbtcAddress.selector,
+            "setFbtcAddress(address)",
+            abi.encode(newFbtcAddress)
+        );
+
+        lockedFBTCFactory.setFbtcAddress(newFbtcAddress);
+        assertEq(lockedFBTCFactory.fbtcAddress(), newFbtcAddress);
+
+        vm.stopPrank();
+    }
+
+    function testSetFbtcBridgeAddressControl() public {
+        vm.startPrank(factoryAdmin);
+
+        bytes32 adminRole = lockedFBTCFactory.DEFAULT_ADMIN_ROLE();
+        assertTrue(lockedFBTCFactory.hasRole(adminRole, factoryAdmin));
+
+        vm.stopPrank();
+
+        vm.startPrank(address(1));
+        vm.expectRevert();
+        lockedFBTCFactory.setFbtcBridgeAddress(address(2));
+        vm.stopPrank();
+    }
+
+    function testRevertSetFbtcBridgeAddress() public {
+        vm.startPrank(factoryAdmin);
+
+        address newFbtcBridgeAddress = address(0);
+        vm.expectRevert("FBTC Bridge cannot be zero address");
+        lockedFBTCFactory.setFbtcBridgeAddress(newFbtcBridgeAddress);
+
+        vm.stopPrank();
+    }
+
+    function testSetFbtcBridgeAddress() public {
+        vm.startPrank(factoryAdmin);
+        address newFbtcAddress = address(1);
+
+        vm.expectEmit(true, true, true, true);
+        emit ProtocolConfigChanged(
+            lockedFBTCFactory.setFbtcAddress.selector,
+            "setFbtcAddress(address)",
+            abi.encode(newFbtcAddress)
+        );
+
+        lockedFBTCFactory.setFbtcAddress(newFbtcAddress);
+        assertEq(lockedFBTCFactory.fbtcAddress(), newFbtcAddress);
+
+        vm.stopPrank();
+    }
+
+    function testSetPauserAddressControl() public {
+        vm.startPrank(factoryAdmin);
+
+        bytes32 adminRole = lockedFBTCFactory.DEFAULT_ADMIN_ROLE();
+        assertTrue(lockedFBTCFactory.hasRole(adminRole, factoryAdmin));
+
+        vm.stopPrank();
+
+        address[] memory pausers = new address[](3);
+        pausers[0] = address(0);
+        pausers[1] = address(1);
+        pausers[2] = address(2);
+
+        vm.startPrank(address(1));
+        vm.expectRevert();
+        lockedFBTCFactory.setPausers(pausers);
+        vm.stopPrank();
+    }
+
+    function testRevertSetPauser() public {
+        vm.startPrank(factoryAdmin);
+
+        vm.expectRevert("Pausers array cannot be empty");
+        address[] memory pausers;
+        lockedFBTCFactory.setPausers(pausers);
+
+        vm.stopPrank();
+    }
+
+    /// @notice The inserted array will replace the original pauser array
+    function testSetPauser() public {
+        vm.startPrank(factoryAdmin);
+
+        address[] memory pausers = new address[](3);
+        pausers[0] = address(0);
+        pausers[1] = address(1);
+        pausers[2] = address(2);
+
+        vm.expectEmit(true, true, true, true);
+        emit ProtocolConfigChanged(
+            lockedFBTCFactory.setPausers.selector,
+            "setPausers(address)",
+            abi.encode(pausers)
+        );
+
+        lockedFBTCFactory.setPausers(pausers);
+        assertEq(lockedFBTCFactory.pausers(0), pausers[0]);
+        assertEq(lockedFBTCFactory.pausers(1), pausers[1]);
+        assertEq(lockedFBTCFactory.pausers(2), pausers[2]);
+
+        vm.stopPrank();
+    }
+
+    function testSetMinterAddressControl() public {
+        address oldMinter = lockedFBTCFactory.minter();
+        address newMinter = address(1);
+
+        vm.startPrank(factoryAdmin);
+        bytes32 adminRole = lockedFBTCFactory.DEFAULT_ADMIN_ROLE();
+        assertTrue(lockedFBTCFactory.hasRole(adminRole, factoryAdmin));
+        vm.stopPrank();
+
+        vm.startPrank(address(1));
+        vm.expectRevert();
+        lockedFBTCFactory.setMinter(newMinter);
+
+        vm.assertEq(lockedFBTCFactory.minter(), oldMinter);
+        vm.assertNotEq(lockedFBTCFactory.minter(), newMinter);
+        vm.stopPrank();
+    }
+
+    function testRevertSetMinter() public {
+        address oldMinter = lockedFBTCFactory.minter();
+        console.log("+++%s",oldMinter);
+        address zeroMinter = address(0);
+
+        vm.startPrank(factoryAdmin);
+        vm.expectRevert("Minter cannot be zero address");
+        lockedFBTCFactory.setMinter(zeroMinter);
+        vm.assertEq(lockedFBTCFactory.minter(), oldMinter);
+        vm.assertNotEq(lockedFBTCFactory.minter(), zeroMinter);
+        vm.stopPrank();
+    }
+
+    function testSetMinter() public {
+        address oldMinter = lockedFBTCFactory.minter();
+        address newMinter = address(1);
+        vm.startPrank(factoryAdmin);
+
+        vm.expectEmit(true, true, true, true);
+        emit ProtocolConfigChanged(
+            lockedFBTCFactory.setMinter.selector,
+            "setMinter(address)",
+            abi.encode(newMinter)
+        );
+
+        lockedFBTCFactory.setMinter(newMinter);
+
+        vm.assertEq(lockedFBTCFactory.minter(), newMinter);
+        vm.assertNotEq(lockedFBTCFactory.minter(), oldMinter);
+        vm.stopPrank();
+    }
+
+    function testSetSafetyCommitteeAddressControl() public {
+        address oldSafetyCommittee = lockedFBTCFactory.safetyCommittee();
+        address newSafetyCommittee = address(2);
+
+        vm.startPrank(factoryAdmin);
+        bytes32 adminRole = lockedFBTCFactory.DEFAULT_ADMIN_ROLE();
+        assertTrue(lockedFBTCFactory.hasRole(adminRole, factoryAdmin));
+        vm.stopPrank();
+
+        vm.startPrank(address(1));
+        vm.expectRevert();
+        lockedFBTCFactory.setSafetyCommittee(newSafetyCommittee);
+
+        vm.assertEq(lockedFBTCFactory.safetyCommittee(), oldSafetyCommittee);
+        vm.assertNotEq(oldSafetyCommittee, newSafetyCommittee);
+        vm.stopPrank();
+    }
+
+    function testRevertSafetyCommittee() public {
+        address oldSafetyCommittee = lockedFBTCFactory.safetyCommittee();
+        address zeroSafetyCommittee = address(0);
+
+        vm.startPrank(factoryAdmin);
+        vm.expectRevert("SafetyCommittee cannot be zero address");
+        lockedFBTCFactory.setSafetyCommittee(zeroSafetyCommittee);
+
+        vm.assertEq(lockedFBTCFactory.safetyCommittee(), oldSafetyCommittee);
+        vm.assertNotEq(oldSafetyCommittee, zeroSafetyCommittee);
+        vm.stopPrank();
+    }
+
+    function testSafetyCommittee() public {
+        address oldSafetyCommittee = lockedFBTCFactory.safetyCommittee();
+        address newSafetyCommittee = address(1);
+
+        vm.startPrank(factoryAdmin);
+        vm.expectEmit(true, true, true, true);
+        emit ProtocolConfigChanged(
+            lockedFBTCFactory.setSafetyCommittee.selector,
+            "setSafetyCommittee(address)",
+            abi.encode(newSafetyCommittee)
+        );
+
+        lockedFBTCFactory.setSafetyCommittee(newSafetyCommittee);
+
+        vm.assertEq(lockedFBTCFactory.safetyCommittee(), newSafetyCommittee);
+        vm.assertNotEq(lockedFBTCFactory.safetyCommittee(), oldSafetyCommittee);
+        vm.stopPrank();
     }
 }
 
