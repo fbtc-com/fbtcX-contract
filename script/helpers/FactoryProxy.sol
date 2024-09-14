@@ -10,6 +10,7 @@ import {AccessControlUpgradeable} from
 import {TimelockController} from "openzeppelin-contracts/contracts/governance/TimelockController.sol";
 import {LockedFBTCFactory} from "../../src/LockedFBTCFactory.sol";
 import {LockedFBTC} from "../../src/LockedFBTC.sol";
+import {LockedFBTCBeacon} from "../../src/LockedFBTCBeacon.sol";
 import {BeaconProxy} from "@openzeppelin/contracts/proxy/beacon/BeaconProxy.sol";
 import {UpgradeableBeacon} from "@openzeppelin/contracts/proxy/beacon/UpgradeableBeacon.sol";
 import {console2 as console} from "forge-std/console2.sol";
@@ -55,7 +56,7 @@ function deployFactoryAll(FactoryDeploymentParams memory params, address deploye
     TimelockController beaconAdmin = _createTimelockControllerWithSingleExecutor(params.proposer, params.lockedFbtcAdmin, salt, params.create2Deployer);
 
     // 2: Deploy the beacon and implementation
-    UpgradeableBeacon beacon = _deployBeacon(beaconAdmin, salt, params.create2Deployer);
+    LockedFBTCBeacon beacon = _deployBeacon(beaconAdmin, salt, params.create2Deployer);
 
     // 3: Deploy the LockedFBTCFactory proxy
     FactoryDeployments memory ds = _deployLockedFBTCFactory(factoryProxyAdmin, beacon, params, salt);
@@ -95,19 +96,18 @@ function _createTimelockControllerWithSingleExecutor(address proposer, address e
     return TimelockController(payable(ICreate2Deployer(create2Deployer).computeAddress(salt, keccak256(bytecode))));
 }
 
-function _deployBeacon(TimelockController beaconAdmin, bytes32 salt, address create2Deployer) returns (UpgradeableBeacon) {
+function _deployBeacon(TimelockController beaconAdmin, bytes32 salt, address create2Deployer) returns (LockedFBTCBeacon) {
     bytes memory lockedFbtcBytecode = abi.encodePacked(type(LockedFBTC).creationCode);
     ICreate2Deployer(create2Deployer).deploy(0, salt, lockedFbtcBytecode);
     address lockedFbtcImplAddress = ICreate2Deployer(create2Deployer).computeAddress(salt, keccak256(lockedFbtcBytecode));
 
-    bytes memory bytecode = abi.encodePacked(type(UpgradeableBeacon).creationCode, abi.encode(lockedFbtcImplAddress));
+    bytes memory bytecode = abi.encodePacked(type(LockedFBTCBeacon).creationCode, abi.encode(lockedFbtcImplAddress,beaconAdmin));
 
     // Use ICreate2Deployer to deploy the UpgradeableBeacon via CREATE2
     ICreate2Deployer(create2Deployer).deploy(0, salt, bytecode);
 
     address beaconAddress = ICreate2Deployer(create2Deployer).computeAddress(salt, keccak256(bytecode));
-    UpgradeableBeacon beacon = UpgradeableBeacon(payable(beaconAddress));
-    beacon.transferOwnership(address(beaconAdmin));
+    LockedFBTCBeacon beacon = LockedFBTCBeacon(payable(beaconAddress));
 
     return beacon;
 }
