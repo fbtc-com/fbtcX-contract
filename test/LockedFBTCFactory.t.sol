@@ -14,6 +14,12 @@ TransparentUpgradeableProxy
 import {Request} from "../src/Common.sol";
 import {console2 as console} from "forge-std/console2.sol";
 
+contract LockedFBTCFactoryV2 is LockedFBTCFactory {
+    function getPauserLength() public view returns (uint256){
+        return pausers.length;
+    }
+}
+
 contract LockedFBTCFactoryTest is BaseTest {
 
     LockedFBTCFactory public lockedFBTCFactory;
@@ -22,6 +28,7 @@ contract LockedFBTCFactoryTest is BaseTest {
     Fbtc0Mock public fbtc0Mock;
     MockFireBridge public mockBridge;
     Create2Deployer public create2Deployer;
+    LockedFBTCFactoryV2 public lockedFBTCFactoryV2;
     address public immutable newAdmin = makeAddr("admin1");
 
     function setUp() public {
@@ -136,31 +143,26 @@ contract LockedFBTCBasicTest is LockedFBTCFactoryTest, ProtocolEvents {
         address f1ProxyAddress = lockedFBTCFactory.createLockedFBTC(minter, name, symbol);
 
         assertTrue(f1ProxyAddress != address(0), "Proxy address should be valid");
-        assertEq(lockedFBTCFactory.lockedFbtcMinters(minter), f1ProxyAddress, "Minter to proxy mapping is incorrect");
-        vm.stopPrank();
-    }
-
-    function testPauseAndUnpause() public {
-        vm.startPrank(address(1));
-        vm.expectRevert();
-        lockedFBTCFactory.pause();
-        assertFalse(lockedFBTCFactory.paused());
-
-        lockedFBTCFactory.unpause();
-        assertFalse(lockedFBTCFactory.paused());
-
         vm.stopPrank();
     }
 
     function testPauseAndUnpauseAccessControl() public {
-        vm.startPrank(factoryAdmin);
-
+        vm.startPrank(address(1));
+        vm.expectRevert();
         lockedFBTCFactory.pause();
-        assertTrue(lockedFBTCFactory.paused());
-
+        assertFalse(lockedFBTCFactory.paused());
+        vm.expectRevert();
         lockedFBTCFactory.unpause();
         assertFalse(lockedFBTCFactory.paused());
+        vm.stopPrank();
+    }
 
+    function testPauseAndUnpause() public {
+        vm.startPrank(factoryAdmin);
+        lockedFBTCFactory.pause();
+        assertTrue(lockedFBTCFactory.paused());
+        lockedFBTCFactory.unpause();
+        assertFalse(lockedFBTCFactory.paused());
         vm.stopPrank();
     }
 
@@ -174,10 +176,8 @@ contract LockedFBTCBasicTest is LockedFBTCFactoryTest, ProtocolEvents {
 
     function testSetFbtcAccessControl() public {
         vm.startPrank(factoryAdmin);
-
         bytes32 adminRole = lockedFBTCFactory.DEFAULT_ADMIN_ROLE();
         assertTrue(lockedFBTCFactory.hasRole(adminRole, factoryAdmin));
-
         vm.stopPrank();
 
         vm.startPrank(address(1));
@@ -307,56 +307,6 @@ contract LockedFBTCBasicTest is LockedFBTCFactoryTest, ProtocolEvents {
         vm.stopPrank();
     }
 
-    function testSetMinterAddressControl() public {
-        address oldMinter = lockedFBTCFactory.minter();
-        address newMinter = address(1);
-
-        vm.startPrank(factoryAdmin);
-        bytes32 adminRole = lockedFBTCFactory.DEFAULT_ADMIN_ROLE();
-        assertTrue(lockedFBTCFactory.hasRole(adminRole, factoryAdmin));
-        vm.stopPrank();
-
-        vm.startPrank(address(1));
-        vm.expectRevert();
-        lockedFBTCFactory.setMinter(newMinter);
-
-        vm.assertEq(lockedFBTCFactory.minter(), oldMinter);
-        vm.assertNotEq(lockedFBTCFactory.minter(), newMinter);
-        vm.stopPrank();
-    }
-
-    function testRevertSetMinter() public {
-        address oldMinter = lockedFBTCFactory.minter();
-        console.log("+++%s",oldMinter);
-        address zeroMinter = address(0);
-
-        vm.startPrank(factoryAdmin);
-        vm.expectRevert("Minter cannot be zero address");
-        lockedFBTCFactory.setMinter(zeroMinter);
-        vm.assertEq(lockedFBTCFactory.minter(), oldMinter);
-        vm.assertNotEq(lockedFBTCFactory.minter(), zeroMinter);
-        vm.stopPrank();
-    }
-
-    function testSetMinter() public {
-        address oldMinter = lockedFBTCFactory.minter();
-        address newMinter = address(1);
-        vm.startPrank(factoryAdmin);
-
-        vm.expectEmit(true, true, true, true);
-        emit ProtocolConfigChanged(
-            lockedFBTCFactory.setMinter.selector,
-            "setMinter(address)",
-            abi.encode(newMinter)
-        );
-
-        lockedFBTCFactory.setMinter(newMinter);
-
-        vm.assertEq(lockedFBTCFactory.minter(), newMinter);
-        vm.assertNotEq(lockedFBTCFactory.minter(), oldMinter);
-        vm.stopPrank();
-    }
-
     function testSetSafetyCommitteeAddressControl() public {
         address oldSafetyCommittee = lockedFBTCFactory.safetyCommittee();
         address newSafetyCommittee = address(2);
@@ -406,6 +356,21 @@ contract LockedFBTCBasicTest is LockedFBTCFactoryTest, ProtocolEvents {
         vm.assertNotEq(lockedFBTCFactory.safetyCommittee(), oldSafetyCommittee);
         vm.stopPrank();
     }
+
+    function testGetCreatedLockedFBTCs() public {
+        vm.startPrank(factoryAdmin);
+        string memory name = "Test Locked FBTC";
+        string memory symbol = "TLF";
+        vm.deal(factoryAdmin, 1 ether);
+        vm.expectEmit(true, false, false, false);
+        emit LockedFBTCDeployed(minter, address(0));
+        address f1ProxyAddress = lockedFBTCFactory.createLockedFBTC(minter, name, symbol);
+        address[] memory lockedFBTCs = lockedFBTCFactory.getCreatedLockedFBTCs();
+        assertTrue(f1ProxyAddress != address(0), "Proxy address should be valid");
+        assertEq(lockedFBTCs[(lockedFBTCs.length - 1)], f1ProxyAddress, "Minter to proxy mapping is incorrect");
+        vm.stopPrank();
+    }
+
 }
 
 contract LockedFBTCTest is LockedFBTCBasicTest {
