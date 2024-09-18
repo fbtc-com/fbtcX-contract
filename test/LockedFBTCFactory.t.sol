@@ -14,12 +14,6 @@ TransparentUpgradeableProxy
 import {Request} from "../src/Common.sol";
 import {console2 as console} from "forge-std/console2.sol";
 
-contract LockedFBTCFactoryV2 is LockedFBTCFactory {
-    function getPauserLength() public view returns (uint256){
-        return pausers.length;
-    }
-}
-
 contract LockedFBTCFactoryTest is BaseTest {
 
     LockedFBTCFactory public lockedFBTCFactory;
