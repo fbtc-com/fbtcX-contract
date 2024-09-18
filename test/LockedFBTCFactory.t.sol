@@ -22,7 +22,6 @@ contract LockedFBTCFactoryTest is BaseTest {
     Fbtc0Mock public fbtc0Mock;
     MockFireBridge public mockBridge;
     Create2Deployer public create2Deployer;
-    LockedFBTCFactoryV2 public lockedFBTCFactoryV2;
     address public immutable newAdmin = makeAddr("admin1");
 
     function setUp() public {
