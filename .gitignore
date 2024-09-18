@@ -3,7 +3,8 @@ cache/
 out/
 
 # Ignores development broadcast logs
-broadcast/factoryDeploy.s.sol/
+broadcast/factoryDeploy.s.sol/5003
+broadcast/factoryDeploy.s.sol/11155111
 !/broadcast
 /broadcast/*/31337/
 /broadcast/**/dry-run/
