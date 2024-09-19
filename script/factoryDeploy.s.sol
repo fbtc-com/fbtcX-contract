@@ -43,7 +43,7 @@ contract Deploy is Base {
     function logDeployments(FactoryDeployments memory deps) public pure {
         console.log("Deployments:");
         console.log("proxyAdmin address: %s", address(deps.factoryProxyAdmin));
-//        console.log("BeaconProxyAdmin address: %s", address(deps.beaconAdmin));
+        console.log("BeaconProxyAdmin address: %s", address(deps.beaconAdmin));
         console.log("beacon address: %s", address(deps.beacon));
         console.log("lockedFBTCFactory address: %s", address(deps.lockedFBTCFactory));
     }

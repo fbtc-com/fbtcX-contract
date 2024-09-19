@@ -12,7 +12,6 @@ import {LockedFBTCFactory} from "../../src/LockedFBTCFactory.sol";
 import {LockedFBTC} from "../../src/LockedFBTC.sol";
 import {LockedFBTCBeacon} from "../../src/LockedFBTCBeacon.sol";
 import {BeaconProxy} from "@openzeppelin/contracts/proxy/beacon/BeaconProxy.sol";
-import {UpgradeableBeacon} from "@openzeppelin/contracts/proxy/beacon/UpgradeableBeacon.sol";
 import {console2 as console} from "forge-std/console2.sol";
 
 contract EmptyContract {}
@@ -24,8 +23,9 @@ interface ICreate2Deployer {
 
 struct FactoryDeployments {
     TimelockController factoryProxyAdmin;
+    TimelockController beaconAdmin;
     LockedFBTCFactory lockedFBTCFactory;
-    UpgradeableBeacon beacon;
+    LockedFBTCBeacon beacon;
 }
 
 struct FactoryDeploymentParams {
@@ -59,7 +59,7 @@ function deployFactoryAll(FactoryDeploymentParams memory params, address deploye
     LockedFBTCBeacon beacon = _deployBeacon(beaconAdmin, salt, params.create2Deployer);
 
     // 3: Deploy the LockedFBTCFactory proxy
-    FactoryDeployments memory ds = _deployLockedFBTCFactory(factoryProxyAdmin, beacon, params, salt);
+    FactoryDeployments memory ds = _deployLockedFBTCFactory(factoryProxyAdmin, beaconAdmin, beacon, params, salt);
 
     // 4: Renounce roles if deployer is not the factoryAdmin
     _renounceRoles(factoryProxyAdmin, deployer, params.factoryAdmin);
@@ -103,7 +103,7 @@ function _deployBeacon(TimelockController beaconAdmin, bytes32 salt, address cre
 
     bytes memory bytecode = abi.encodePacked(type(LockedFBTCBeacon).creationCode, abi.encode(lockedFbtcImplAddress,beaconAdmin));
 
-    // Use ICreate2Deployer to deploy the UpgradeableBeacon via CREATE2
+    // Use ICreate2Deployer to deploy the LockedFBTCBeacon via CREATE2
     ICreate2Deployer(create2Deployer).deploy(0, salt, bytecode);
 
     address beaconAddress = ICreate2Deployer(create2Deployer).computeAddress(salt, keccak256(bytecode));
@@ -114,7 +114,8 @@ function _deployBeacon(TimelockController beaconAdmin, bytes32 salt, address cre
 
 function _deployLockedFBTCFactory(
     TimelockController factoryProxyAdmin,
-    UpgradeableBeacon beacon,
+    TimelockController beaconAdmin,
+    LockedFBTCBeacon beacon,
     FactoryDeploymentParams memory params,
     bytes32 salt
 ) returns (FactoryDeployments memory) {
@@ -146,6 +147,7 @@ function _deployLockedFBTCFactory(
     // Prepare the deployments struct to return
     FactoryDeployments memory ds = FactoryDeployments({
         factoryProxyAdmin: factoryProxyAdmin,
+        beaconAdmin: beaconAdmin,
         lockedFBTCFactory: factory,
         beacon: beacon
     });

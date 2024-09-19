@@ -47,4 +47,12 @@ contract Base is Script {
         require(address(depls.lockedFBTC).code.length > 0, "contracts are not deployed yet");
         return depls;
     }
+
+    function readFactoryDeployments(string memory subfolder) public view returns (FactoryDeployments memory) {
+        bytes memory data = vm.readFileBinary(_deploymentsFile(subfolder));
+        FactoryDeployments memory depls = abi.decode(data, (FactoryDeployments));
+
+        require(address(depls.lockedFBTCFactory).code.length > 0, "contracts are not deployed yet");
+        return depls;
+    }
 }
