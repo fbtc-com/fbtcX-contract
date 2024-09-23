@@ -49,7 +49,7 @@ contract Vulcan is ERC1155, AccessControl {
     }
 
     ///@notice Owner-only function to mint new tokens to multiple addresses
-    function batchMint(address[] calldata to, uint256[] calldata tokenIds, uint256[] calldata amounts) external onlyRole(MINTER_ROLE) {
+    function mintToMultiAddr(address[] calldata to, uint256[] calldata tokenIds, uint256[] calldata amounts) external onlyRole(MINTER_ROLE) {
         require(to.length == tokenIds.length && to.length == amounts.length, "Invalid input");
         for (uint256 i = 0; i < to.length; i++) {
             _mint(to[i], tokenIds[i], amounts[i], new bytes(0));
