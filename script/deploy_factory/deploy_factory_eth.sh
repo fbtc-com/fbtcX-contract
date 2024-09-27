@@ -30,14 +30,8 @@ forge script script/factoryDeploy.s.sol:Deploy \
 --rpc-url $FOUNDRY_RPC_URL \
 --private-key $PRIVATE_KEY \
 --verify \
---verifier-url "https://explorer.sepolia.mantle.xyz/api?" \
+--verifier-url "https://api.etherscan.io/api?" \
 --broadcast \
 --slow
 
-# Check if the role transfer was successful
-if [ $? -ne 0 ]; then
-  echo "Role transfer failed"
-  exit 1
-fi
-
-echo "Deployment and role transfer completed successfully"
+echo "Deployment completed successfully"
