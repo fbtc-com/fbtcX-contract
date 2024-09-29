@@ -2,7 +2,7 @@
 pragma solidity ^0.8.20;
 
 import "forge-std/Script.sol";
-import {Vulcan} from "../src/FBTCIdentity.sol"; 
+import {FBTCBadge} from "../src/FBTCIdentity.sol"; 
 
 contract DeployOnMultipleNetworks is Script {
     function run() external {
@@ -11,13 +11,13 @@ contract DeployOnMultipleNetworks is Script {
 
         vm.startBroadcast();
         // use create2 to deploy the contract
-        Vulcan nft = new Vulcan{salt: salt}(
+        FBTCBadge nft = new FBTCBadge{salt: salt}(
             "https://static.testnet.mantle.xyz/fbtc/json/", // baseURI
             owner
         );
 
         vm.stopBroadcast();
 
-        console.log("Deployed Vulcan contract at:", address(nft));
+        console.log("Deployed FBTCBadge contract at:", address(nft));
     }
 }

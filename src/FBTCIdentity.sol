@@ -4,7 +4,7 @@ pragma solidity ^0.8.20;
 import "@openzeppelin/contracts/token/ERC1155/ERC1155.sol";
 import "@openzeppelin/contracts/utils/Strings.sol";
 import "@openzeppelin/contracts/access/AccessControl.sol";
-contract Vulcan is ERC1155, AccessControl {
+contract FBTCBadge is ERC1155, AccessControl {
     using Strings for uint256;
     string public name = "FBTCBadge";
     string public symbol = "FBTCBADGE";
