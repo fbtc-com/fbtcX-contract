@@ -7,12 +7,13 @@ import {FBTCBadge} from "../src/FBTCIdentity.sol";
 contract DeployOnMultipleNetworks is Script {
     function run() external {
         bytes32 salt = keccak256(abi.encodePacked("FBTC"));
-        address owner = 0xDCB1BC0618D5F009A4C3e76d877Bf89d7c215BA9;// owner
+        address owner = vm.envAddress("OWNER");// owner
+        string memory baseUrl= vm.envString("BASEURL");
 
         vm.startBroadcast();
         // use create2 to deploy the contract
         FBTCBadge nft = new FBTCBadge{salt: salt}(
-            "https://static.testnet.mantle.xyz/fbtc/json/", // baseURI
+            baseUrl, // baseURI
             owner
         );
 
