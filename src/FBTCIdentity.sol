@@ -6,8 +6,8 @@ import "@openzeppelin/contracts/utils/Strings.sol";
 import "@openzeppelin/contracts/access/AccessControl.sol";
 contract Vulcan is ERC1155, AccessControl {
     using Strings for uint256;
-    string public name = "Vulcan";
-    string public symbol = "VULCAN";
+    string public name = "FBTCBadge";
+    string public symbol = "FBTCBADGE";
 
     /// @notice Base URI for metadata
     string private baseURI;
