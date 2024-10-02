@@ -4,9 +4,9 @@ pragma solidity 0.8.20;
 import {ERC20Upgradeable} from "@openzeppelin/contracts-upgradeable/token/ERC20/ERC20Upgradeable.sol";
 import {IERC20Upgradeable} from "@openzeppelin/contracts-upgradeable/token/ERC20/IERC20Upgradeable.sol";
 import {SafeERC20Upgradeable} from "@openzeppelin/contracts-upgradeable/token/ERC20/utils/SafeERC20Upgradeable.sol";
-import "@openzeppelin/contracts-upgradeable/security/PausableUpgradeable.sol";
-import "@openzeppelin/contracts-upgradeable/access/AccessControlUpgradeable.sol";
-import "@openzeppelin/contracts-upgradeable/proxy/utils/Initializable.sol";
+import {PausableUpgradeable} from "@openzeppelin/contracts-upgradeable/security/PausableUpgradeable.sol";
+import {AccessControlUpgradeable} from "@openzeppelin/contracts-upgradeable/access/AccessControlUpgradeable.sol";
+import {Initializable} from "@openzeppelin/contracts-upgradeable/proxy/utils/Initializable.sol";
 
 import {IFireBridge} from "./Interfaces/IFireBridge.sol";
 import {Request} from "./Common.sol";
@@ -68,7 +68,7 @@ contract LockedFBTC is Initializable, ERC20Upgradeable, PausableUpgradeable, Acc
         address _fbtcAddress,
         address _fbtcBridgeAddress,
         address admin,
-        address pauser,
+        address[] memory pausers,
         address minter,
         address safetyCommittee,
         string memory name,
@@ -82,9 +82,12 @@ contract LockedFBTC is Initializable, ERC20Upgradeable, PausableUpgradeable, Acc
         __ERC20_init(name, symbol);
         __Pausable_init();
         _grantRole(DEFAULT_ADMIN_ROLE, admin);
-        _grantRole(PAUSER_ROLE, pauser);
         _grantRole(MINTER_ROLE, minter);
         _grantRole(SAFETY_COMMITTEE_ROLE, safetyCommittee);
+
+        for (uint i = 0; i < pausers.length; i++) {
+            _grantRole(PAUSER_ROLE, pausers[i]);
+        }
 
         fbtcBridge = IFireBridge(_fbtcBridgeAddress);
         fbtc = IERC20Upgradeable(_fbtcAddress);

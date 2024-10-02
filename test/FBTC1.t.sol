@@ -21,13 +21,16 @@ contract LockedFBTCTest is BaseTest {
         mockBridge = new MockFireBridge(address(fbtc0Mock));
         lockedFBTC = LockedFBTC(address(newProxyWithAdmin(proxyAdmin)));
 
+        address[] memory pausers = new address[](1);
+
+        pausers[0] = pauser;
         lockedFBTC = newLockedFBTC(
             proxyAdmin,
             ITransparentUpgradeableProxy(address(lockedFBTC)),
             address(fbtc0Mock),
             address(mockBridge),
             admin,
-            pauser,
+            pausers,
             minter,
             safetyCommittee,
             "testToken",

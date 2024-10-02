@@ -3,6 +3,7 @@ pragma solidity ^0.8.20;
 
 import {Script} from "forge-std/Script.sol";
 import {Deployments} from "./helpers/Proxy.sol";
+import {FactoryDeployments} from "./helpers/FactoryProxy.sol";
 
 contract Base is Script {
     function setUp() public virtual {
@@ -27,6 +28,10 @@ contract Base is Script {
         vm.writeFileBinary(_deploymentsFile(subfolder), abi.encode(deps));
     }
 
+    function writeFactoryDeployments(string memory subfolder, FactoryDeployments memory deps) public {
+        vm.writeFileBinary(_deploymentsFile(subfolder), abi.encode(deps));
+    }
+
     function readDeployments() public view returns (Deployments memory) {
         bytes memory data = vm.readFileBinary(_deploymentsFile());
         Deployments memory depls = abi.decode(data, (Deployments));
@@ -34,11 +39,20 @@ contract Base is Script {
         require(address(depls.lockedFBTC).code.length > 0, "contracts are not deployed yet");
         return depls;
     }
+
     function readDeployments(string memory subfolder) public view returns (Deployments memory) {
         bytes memory data = vm.readFileBinary(_deploymentsFile(subfolder));
         Deployments memory depls = abi.decode(data, (Deployments));
 
         require(address(depls.lockedFBTC).code.length > 0, "contracts are not deployed yet");
+        return depls;
+    }
+
+    function readFactoryDeployments(string memory subfolder) public view returns (FactoryDeployments memory) {
+        bytes memory data = vm.readFileBinary(_deploymentsFile(subfolder));
+        FactoryDeployments memory depls = abi.decode(data, (FactoryDeployments));
+
+        require(address(depls.lockedFBTCFactory).code.length > 0, "contracts are not deployed yet");
         return depls;
     }
 }

@@ -3,6 +3,7 @@ pragma solidity ^0.8.20;
 
 import {Test} from "forge-std/Test.sol";
 import {DeploymentParams} from "../script/helpers/Proxy.sol";
+import {FactoryDeploymentParams} from "../script/helpers/FactoryProxy.sol";
 import {Strings} from "openzeppelin-contracts/contracts/utils/Strings.sol";
 import {Ownable} from "openzeppelin-contracts/contracts/access/Ownable.sol";
 import {ERC20} from "openzeppelin-contracts/contracts/token/ERC20/ERC20.sol";
@@ -14,9 +15,11 @@ contract BaseTest is Test {
     address public immutable upgrader = makeAddr("upgrader");
 
     address public immutable admin = makeAddr("admin");
+    address public immutable factoryAdmin = makeAddr("factoryAdmin");
     address public immutable pauser = makeAddr("pauser");
     address public immutable minter = makeAddr("minter");
     address public immutable safetyCommittee = makeAddr("safetyCommittee");
+    address public immutable lockedFbtcAdmin = makeAddr("lockedFbtcAdmin");
 
     address public immutable user = makeAddr("user");
 
@@ -32,17 +35,42 @@ contract BaseTest is Test {
     }
 
     function deploymentParams() internal view returns (DeploymentParams memory) {
-        // BTCBridge setup
+        // Reading environment variables for pauser addresses and storing them in an array address;
+        address[] memory pausers = new address[](3);
+        pausers[0] = vm.envAddress("PAUSER_ROLE_ADDRESS1");
+        pausers[1] = vm.envAddress("PAUSER_ROLE_ADDRESS2");
+        pausers[2] = vm.envAddress("PAUSER_ROLE_ADDRESS3");
+
+        // Returning deployment parameters with the pauser array
         return DeploymentParams({
             fbtcAddress: vm.envAddress("FBTC_ADDRESS"),
             fireBrdigeAddress: vm.envAddress("FIRE_BRIDGE_ADDRESS"),
             admin: vm.envAddress("SUPER_ADMIN"),
             proposer: vm.envAddress("PROPOSER_ADDRESS"),
-            pauser1: vm.envAddress("PAUSER_ROLE_ADDRESS"),
-            pauser2: vm.envAddress("PAUSER_ROLE_ADDRESS"),
-            pauser3: vm.envAddress("PAUSER_ROLE_ADDRESS"),
+            pausers: pausers,
             minter: vm.envAddress("MINTER_ROLE_ADDRESS"),
             safetyCommittee: vm.envAddress("SAFETY_COMMITTEE")
+        });
+    }
+
+    function factoryDeploymentParams() internal view returns (FactoryDeploymentParams memory) {
+        // Reading environment variables for pauser addresses and storing them in an array address;
+        address[] memory pausers = new address[](3);
+        pausers[0] = vm.envAddress("PAUSER_ROLE_ADDRESS1");
+        pausers[1] = vm.envAddress("PAUSER_ROLE_ADDRESS2");
+        pausers[2] = vm.envAddress("PAUSER_ROLE_ADDRESS3");
+
+        // Returning deployment parameters with the pauser array
+        return FactoryDeploymentParams({
+            factoryAdmin : vm.envAddress("FACTORY_ADMIN"),
+            fbtcAddress: vm.envAddress("FBTC_ADDRESS"),
+            fireBrdigeAddress: vm.envAddress("FIRE_BRIDGE_ADDRESS"),
+            lockedFbtcAdmin: vm.envAddress("SUPER_ADMIN"),
+            proposer: vm.envAddress("PROPOSER_ADDRESS"),
+            pausers: pausers,
+            minter: vm.envAddress("MINTER_ROLE_ADDRESS"),
+            safetyCommittee: vm.envAddress("SAFETY_COMMITTEE"),
+            create2Deployer: vm.envAddress("CREATE2_DEPLOYER")
         });
     }
 
