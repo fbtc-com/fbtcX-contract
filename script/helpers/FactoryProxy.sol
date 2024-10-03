@@ -33,7 +33,6 @@ struct FactoryDeploymentParams {
     address lockedFbtcAdmin;
     address proposer;
     address[] pausers;
-    address minter;
     address safetyCommittee;
     address fbtcAddress;
     address fireBrdigeAddress;

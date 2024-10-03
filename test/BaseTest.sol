@@ -17,7 +17,6 @@ contract BaseTest is Test {
     address public immutable admin = makeAddr("admin");
     address public immutable factoryAdmin = makeAddr("factoryAdmin");
     address public immutable pauser = makeAddr("pauser");
-    address public immutable minter = makeAddr("minter");
     address public immutable safetyCommittee = makeAddr("safetyCommittee");
     address public immutable lockedFbtcAdmin = makeAddr("lockedFbtcAdmin");
 
