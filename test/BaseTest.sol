@@ -15,6 +15,7 @@ contract BaseTest is Test {
     address public immutable upgrader = makeAddr("upgrader");
 
     address public immutable admin = makeAddr("admin");
+    address public immutable minter = makeAddr("minter");
     address public immutable factoryAdmin = makeAddr("factoryAdmin");
     address public immutable pauser = makeAddr("pauser");
     address public immutable safetyCommittee = makeAddr("safetyCommittee");
@@ -67,7 +68,6 @@ contract BaseTest is Test {
             lockedFbtcAdmin: vm.envAddress("SUPER_ADMIN"),
             proposer: vm.envAddress("PROPOSER_ADDRESS"),
             pausers: pausers,
-            minter: vm.envAddress("MINTER_ROLE_ADDRESS"),
             safetyCommittee: vm.envAddress("SAFETY_COMMITTEE"),
             create2Deployer: vm.envAddress("CREATE2_DEPLOYER")
         });
