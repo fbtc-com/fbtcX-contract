@@ -81,8 +81,8 @@ contract RateProvider is AccessControl {
 
         uint256 rate = (totalBtcInProtocol * 1e18) / totalSupplyFbtc;
 
-        uint256 lowerLimit = (lastRate * lowerBound) / 10000;
-        uint256 upperLimit = (lastRate * upperBound) / 10000;
+        uint256 lowerLimit = (lowerBound * 1e18) / 10000;
+        uint256 upperLimit = (upperBound * 1e18) / 10000;
 
         if (lastRate != 0 && (rate < lowerLimit || rate > upperLimit)) {
             return lastRate;
@@ -105,13 +105,14 @@ contract RateProvider is AccessControl {
     function _updateRate() internal {
 
         if (totalSupplyFbtc == 0 || totalBtcInProtocol == 0) {
+            lastRate = 1e18;
             return;
         }
 
         uint256 rate = (totalBtcInProtocol * 1e18) / totalSupplyFbtc;
 
-        uint256 lowerLimit = (lastRate * lowerBound) / 10000;
-        uint256 upperLimit = (lastRate * upperBound) / 10000;
+        uint256 lowerLimit = (lowerBound * 1e18) / 10000;
+        uint256 upperLimit = (upperBound * 1e18) / 10000;
 
         if (lastRate == 0 || (rate >= lowerLimit && rate <= upperLimit)) {
             lastRate = rate;
