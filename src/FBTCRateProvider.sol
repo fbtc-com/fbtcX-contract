@@ -35,6 +35,8 @@ contract RateProvider is AccessControl {
         _grantRole(DEFAULT_ADMIN_ROLE,owner);
         _grantRole(OPERATOR_ROLE,operator);
 
+        rate = 1e18;
+
         lowerBound = 10000; // 1.0000
         upperBound = 10050; // 1.0050
     }
