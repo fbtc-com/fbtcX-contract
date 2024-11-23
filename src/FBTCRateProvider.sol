@@ -11,10 +11,8 @@ contract RateProvider is AccessControl {
     // total BTC in fbtc protocol
     uint256 private totalBtcInProtocol;
 
-    // Stores the last computed rate between totalBtcInProtocol and totalSupplyFbtc.
-    // Used to maintain stability in the rate by providing a fallback value if the computed rate
-    // falls outside the defined bounds.
-    uint256 private lastRate;
+    // Stores the latest rate between totalBtcInProtocol and totalSupplyFbtc.
+    uint256 private rate;
 
     // lower bounds
     uint256 private lowerBound;
@@ -27,6 +25,7 @@ contract RateProvider is AccessControl {
     // Event declarations with old and new values
     event TotalSupplyFbtcUpdated(uint256 indexed oldTotalSupplyFbtc, uint256 indexed newTotalSupplyFbtc);
     event TotalBtcInProtocolUpdated(uint256 indexed  oldTotalBtcInProtocol, uint256 indexed newTotalBtcInProtocol);
+    event RateUpdated(uint256 indexed oldRate, uint256 indexed newRate);
 
     constructor(address owner, address operator) {
 
@@ -36,7 +35,7 @@ contract RateProvider is AccessControl {
         _grantRole(DEFAULT_ADMIN_ROLE,owner);
         _grantRole(OPERATOR_ROLE,operator);
 
-        lowerBound = 9950; // 0.9950
+        lowerBound = 10000; // 1.0000
         upperBound = 10050; // 1.0050
     }
 
@@ -68,26 +67,15 @@ contract RateProvider is AccessControl {
     /// @param _lowerBound The new lower bound as a percentage (based on 10000)
     /// @param _upperBound The new upper bound as a percentage (based on 10000)
     function updateBounds(uint256 _lowerBound, uint256 _upperBound) external onlyRole(DEFAULT_ADMIN_ROLE) {
-        require(_lowerBound < 10000 && _upperBound > 10000, "Bounds must straddle 10000 (1.0)");
+        require(_lowerBound <= 10000 && _upperBound >= 10000, "Bounds must straddle 10000 (1.0)");
         require(_lowerBound > 0 && _upperBound < 20000, "Bounds must be realistic");
         lowerBound = _lowerBound;
         upperBound = _upperBound;
+        _updateRate();
     }
 
     /// @notice Get the ratio between totalSupplyFbtc and totalBtcInProtocol
     function getRate() external view returns (uint256) {
-        require(totalSupplyFbtc > 0, "Total supply of FBTC is not set");
-        require(totalBtcInProtocol > 0, "Total BTC in protocol is not set");
-
-        uint256 rate = (totalBtcInProtocol * 1e18) / totalSupplyFbtc;
-
-        uint256 lowerLimit = (lowerBound * 1e18) / 10000;
-        uint256 upperLimit = (upperBound * 1e18) / 10000;
-
-        if (lastRate != 0 && (rate < lowerLimit || rate > upperLimit)) {
-            return lastRate;
-        }
-
         return rate;
     }
 
@@ -105,17 +93,16 @@ contract RateProvider is AccessControl {
     function _updateRate() internal {
 
         if (totalSupplyFbtc == 0 || totalBtcInProtocol == 0) {
-            lastRate = 1e18;
+            rate = 1e18;
             return;
         }
 
-        uint256 rate = (totalBtcInProtocol * 1e18) / totalSupplyFbtc;
+        uint256 oldRate = rate;
+        uint256 newRate = (totalBtcInProtocol * 1e18) / totalSupplyFbtc;
 
-        uint256 lowerLimit = (lowerBound * 1e18) / 10000;
-        uint256 upperLimit = (upperBound * 1e18) / 10000;
-
-        if (lastRate == 0 || (rate >= lowerLimit && rate <= upperLimit)) {
-            lastRate = rate;
+        if (rate == 0 || (newRate >= (lowerBound * 1e18 / 10000) && newRate <= (upperBound * 1e18 / 10000))) {
+            rate = newRate;
+            emit RateUpdated(oldRate, newRate);
         }
     }
 }

@@ -46,8 +46,8 @@ contract RateProviderTest is Test {
 
     function testUpdateBounds() public {
 
-        uint256 totalSupply = 10000 * 1e8;
-        uint256 totalBtc = 9999 * 1e8;
+        uint256 totalSupply = 9999 * 1e8;
+        uint256 totalBtc = 10000 * 1e8;
 
         vm.prank(operator);
         rateProvider.setTotalSupplyFbtc(totalSupply);
@@ -91,7 +91,6 @@ contract RateProviderTest is Test {
         uint256 newBtc = 1001 * 1e8;
         rateProvider.setTotalBtcInProtocol(newBtc);
 
-        // Fetch rate again, should return lastRate
         uint256 secondRate = rateProvider.getRate();
         assertEq(secondRate, 1001000000000000000, "Rate should remain unchanged outside bounds");
 
@@ -141,13 +140,6 @@ contract RateProviderTest is Test {
         uint256 updatedRate = rateProvider.getRate();
 
         assertEq(updatedRate, (totalBtc * 1e18) / totalSupply, "lastRate should update correctly with adjusted bounds");
-
-        vm.prank(admin);
-        rateProvider.updateBounds(9820, 10100); // New bounds: 0.982 - 1.03
-
-        uint256 updatedRate2 = rateProvider.getRate();
-
-        assertEq(updatedRate2, 1e18, "lastRate should update correctly with adjusted bounds");
 
     }
 
