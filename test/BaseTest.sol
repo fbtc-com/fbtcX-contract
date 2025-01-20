@@ -69,7 +69,8 @@ contract BaseTest is Test {
             proposer: vm.envAddress("PROPOSER_ADDRESS"),
             pausers: pausers,
             safetyCommittee: vm.envAddress("SAFETY_COMMITTEE"),
-            create2Deployer: vm.envAddress("CREATE2_DEPLOYER")
+            create2Deployer: vm.envAddress("CREATE2_DEPLOYER"),
+            version: vm.envString("VERSION")
         });
     }
 

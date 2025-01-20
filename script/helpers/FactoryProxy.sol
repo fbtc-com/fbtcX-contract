@@ -37,6 +37,7 @@ struct FactoryDeploymentParams {
     address fbtcAddress;
     address fireBrdigeAddress;
     address create2Deployer;
+    string version;
 }
 
 function deployFactoryAll(FactoryDeploymentParams memory params) returns (FactoryDeployments memory) {
@@ -48,7 +49,7 @@ function deployFactoryAll(FactoryDeploymentParams memory params) returns (Factor
 /// @param deployer The address executing the deployment.
 function deployFactoryAll(FactoryDeploymentParams memory params, address deployer) returns (FactoryDeployments memory) {
 
-    bytes32 salt = keccak256(abi.encodePacked(address(params.fbtcAddress)));
+    bytes32 salt = keccak256(abi.encodePacked(address(params.fbtcAddress), deployer, params.version));
 
     // 1: Create proxy admins
     TimelockController factoryProxyAdmin = _createTimelockController(deployer, params.factoryAdmin, salt, params.create2Deployer);
