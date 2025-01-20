@@ -26,11 +26,9 @@ fi
 forge script script/factoryDeploy.s.sol:Deploy \
 -s "$(cast calldata "deploy(string)" "$PROJECT_NAME")" \
 --rpc-url $FOUNDRY_RPC_URL \
+--gas-price 100000000 \
 --private-key $PRIVATE_KEY \
 --verify \
---verifier custom \
---verifier-url $VERIFIER_URL \
---verifier-api-key $ETHERSCAN_API_KEY \
 --broadcast \
 --slow \
 --timeout 600
