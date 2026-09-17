@@ -12,7 +12,6 @@ import {IFireBridge} from "./Interfaces/IFireBridge.sol";
 import {Request} from "./Common.sol";
 
 contract LockedFBTC is Initializable, ERC20Upgradeable, PausableUpgradeable, AccessControlUpgradeable {
-
     // event
 
     /// @notice Event emitted when lockedFBTC is minted.
@@ -74,18 +73,17 @@ contract LockedFBTC is Initializable, ERC20Upgradeable, PausableUpgradeable, Acc
         string memory name,
         string memory symbol
     ) public initializer {
-
         require(admin != address(0), "Admin cannot be zero Address");
         require(_fbtcAddress != address(0), "Admin cannot be zero Address");
         require(_fbtcBridgeAddress != address(0), "Admin cannot be zero Address");
-        
+
         __ERC20_init(name, symbol);
         __Pausable_init();
         _grantRole(DEFAULT_ADMIN_ROLE, admin);
         _grantRole(MINTER_ROLE, minter);
         _grantRole(SAFETY_COMMITTEE_ROLE, safetyCommittee);
 
-        for (uint i = 0; i < pausers.length; i++) {
+        for (uint256 i = 0; i < pausers.length; i++) {
             _grantRole(PAUSER_ROLE, pausers[i]);
         }
 
@@ -110,10 +108,10 @@ contract LockedFBTC is Initializable, ERC20Upgradeable, PausableUpgradeable, Acc
 
     // Minter methods
 
-     /// @notice Mints lockedFBTC tokens in response to a burn FBTC request on the FBTC bridge.
-     /// @dev This function mints lockedFBTC tokens to the caller's address after transferring the equivalent amount of FBTC tokens to this contract.
-     /// @param _amount The amount of lockedFBTC to be minted.
-     /// @return realAmount The actual amount of lockedFBTC minted after deducting the burn fee.
+    /// @notice Mints lockedFBTC tokens in response to a burn FBTC request on the FBTC bridge.
+    /// @dev This function mints lockedFBTC tokens to the caller's address after transferring the equivalent amount of FBTC tokens to this contract.
+    /// @param _amount The amount of lockedFBTC to be minted.
+    /// @return realAmount The actual amount of lockedFBTC minted after deducting the burn fee.
     function mintLockedFbtcRequest(uint256 _amount)
         public
         onlyRole(MINTER_ROLE)
@@ -133,13 +131,13 @@ contract LockedFBTC is Initializable, ERC20Upgradeable, PausableUpgradeable, Acc
         emit MintLockedFbtcRequest(msg.sender, realAmount, _r.fee);
     }
 
-     /// @notice Initiates a request to redeem FBTC tokens by submitting a corresponding BTC deposit transaction.
-     /// @dev This function triggers a new mint request on the FBTC bridge using the BTC deposit transaction details.
-     /// @param _amount The amount of FBTC to redeem.
-     /// @param _depositTxid The BTC deposit txid
-     /// @param _outputIndex The transaction output index to user's deposit address.
-     /// @return _hash The created hash of the mint request.
-     /// @return _r The request details stored in the FBTC bridge.
+    /// @notice Initiates a request to redeem FBTC tokens by submitting a corresponding BTC deposit transaction.
+    /// @dev This function triggers a new mint request on the FBTC bridge using the BTC deposit transaction details.
+    /// @param _amount The amount of FBTC to redeem.
+    /// @param _depositTxid The BTC deposit txid
+    /// @param _outputIndex The transaction output index to user's deposit address.
+    /// @return _hash The created hash of the mint request.
+    /// @return _r The request details stored in the FBTC bridge.
     function redeemFbtcRequest(uint256 _amount, bytes32 _depositTxid, uint256 _outputIndex)
         public
         onlyRole(MINTER_ROLE)
@@ -154,9 +152,9 @@ contract LockedFBTC is Initializable, ERC20Upgradeable, PausableUpgradeable, Acc
         emit RedeemFbtcRequest(msg.sender, _depositTxid, _outputIndex, _amount);
     }
 
-     /// @notice Confirms the redemption of lockedFBTC tokens and completes the transfer to the token holder.
-     /// @dev Burns the lockedFBTC tokens and transfers the equivalent FBTC from this contract to the caller.
-     /// @param _amount The amount of FBTC to confirm and transfer.
+    /// @notice Confirms the redemption of lockedFBTC tokens and completes the transfer to the token holder.
+    /// @dev Burns the lockedFBTC tokens and transfers the equivalent FBTC from this contract to the caller.
+    /// @param _amount The amount of FBTC to confirm and transfer.
     function confirmRedeemFbtc(uint256 _amount) public onlyRole(MINTER_ROLE) whenNotPaused {
         require(_amount > 0, "Amount must be greater than zero.");
         require(fbtc.balanceOf(address(this)) >= _amount, "Insufficient FBTC balance in contract.");
