@@ -181,7 +181,7 @@ contract LockedFBTCV2 is Initializable, ERC20Upgradeable, PausableUpgradeable, A
         _burn(msg.sender, _amount);
     }
 
-    /// @notice Allows the safety committee to perform an migration of lockedFBTC to another address.
+    /// @notice Allows the MIGRATOR_ROLE to perform an migration of lockedFBTC to another address.
     function migrateLockedFbtc(address _to, uint256 _amount) public onlyRole(MIGRATOR_ROLE) {
         require(_amount > 0, "Amount must be greater than zero.");
         _mint(_to, _amount);
