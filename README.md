@@ -33,6 +33,12 @@ forge script script/deploy.s.sol:Deploy \
 
 ### Upgrading
 
+Bedrock 等通过 `TransparentUpgradeableProxy` 部署、且由 `TimelockController` 直接管理 proxy admin 的 lockedFBTC 实例，升级到 `LockedFBTCV2` 时请使用专用脚本和中文操作手册：[`script/LOCKED_FBTC_V2_UPGRADE.md`](script/LOCKED_FBTC_V2_UPGRADE.md)。该流程只升级指定代理，并在升级后向 Ethereum migrator 单独授予 `MIGRATOR_ROLE`。
+
+专用脚本会校验 ERC-1967 implementation/admin/beacon 槽，并明确禁止把 Transparent 流程用于 `BeaconProxy`。Factory 创建的 Beacon 实例需要另行设计和审核共享 Beacon 升级流程。
+
+以下是仓库原有的通用升级流程；升级 `LockedFBTCV2` 时应优先使用上述专用脚本：
+
 Upgrade a contract to its new implementation in the `src/` directory. The script will deploy a new implementation contract but you can
 control whether it **executes the upgrade** onchain with the named argument `execute`. Note that even if you call the upgrade with
 `execute=false`, you **must** also include the `--broadcast` option as the implementation contract must be deployed for the eventual upgrade
